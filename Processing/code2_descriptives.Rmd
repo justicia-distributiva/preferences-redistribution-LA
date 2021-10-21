@@ -1,0 +1,596 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
++ Descriptive statistics
+
+Packages
+
+```{r Packages, message=FALSE, warning=FALSE, include=FALSE}
+
+#Detach previous packages
+lapply(names(sessionInfo()$loadedOnly), require, character.only = TRUE)
+invisible(lapply(paste0('package:', names(sessionInfo()$otherPkgs)), detach, character.only=TRUE, unload=TRUE, force=TRUE))
+
+#Install and load packages
+library(pacman)
+p_load(tidyverse, dplyr, stargazer, countrycode, splitstackshape, data.table, ggplot2, ggthemes, scales, reshape2, matrixStats, xtable, Hmisc)
+
+```
+
+
+Load data 
+
+```{r Database}
+#Load database
+#rm(list = ls())
+load("lapop_final.RData")
+
+#Exclude Venezuela
+lapop_ven = lapop
+
+country_vars_waves_ven = country_vars_waves
+
+lapop = lapop %>% 
+  filter(country!="VEN")
+
+country_vars_waves = country_vars_waves %>% 
+  filter(country!="VEN")
+
+
+```
+
+Select variables
+
+```{r Descriptive statistics, echo=FALSE, message=FALSE, warning=FALSE}
+#New 
+lapop1 = lapop %>% 
+  select(country, countryname, country_wave, country_wave_rec, year, wave, weight1500, wt, redistribution, man_f, age, married_f, ideology_f, employment_r, education_r, decile, decile_d10, decile_f, zone, sysconf, gdp, gdp_mean, gdp_dif, gini, gini_mean, gini_dif, welfare)
+
+#Create graphs directory
+try(dir.create("Graphs"))
+
+#Nivel 1
+lapop1_a = lapop1 %>% 
+  select(redistribution, decile, man_f, age, married_f, ideology_f, sysconf, employment_r, education_r, zone, decile_d10, decile_f) 
+
+lapop1_a = lapop1_a %>%
+  rename(income = decile) %>% 
+  mutate(man = as.numeric(man_f) - 1,
+         married = as.numeric(married_f) - 1,
+         ideology = as.numeric(ideology_f) - 1,
+         urban = as.numeric(zone) - 1,
+         employment = as.numeric(employment_r) - 1,
+         education = as.numeric(education_r) - 1)
+
+
+stargazer(lapop1_a,title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
+
+sapply(lapop1_a, class)
+
+prop.table(table(lapop1_a$man_f))
+prop.table(table(lapop1_a$married_f))
+prop.table(table(lapop1_a$employment_r))
+prop.table(table(lapop1_a$ideology_f))
+prop.table(table(lapop1_a$education_r))
+prop.table(table(lapop1_a$zone))
+
+#Nivel 2
+country_vars_waves_a= country_vars_waves %>% 
+  select(-c(year, welfare))
+
+stargazer(country_vars_waves_a, title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
+?stargazer
+
+#Nivel 3
+country_vars = country_vars_waves %>% 
+  distinct(country, .keep_all=TRUE) %>% 
+  select(country, welfare)
+
+prop.table(table(country_vars$welfare))
+
+#rm(list=setdiff(ls(), c("lapop", "lapop1", "country_vars_waves", "country_vars")))
+
+```
+
+
+
+```{r Country, echo=TRUE, message=FALSE, warning=FALSE}
+#Database: Preference for redistribution by countries
+redist <- xtabs(~countryname+redistribution, data=lapop1)
+redist <- prop.table(redist, 1)*100
+redist <- as.data.frame(redist)
+redist <-redist[order(-redist$Freq, redist$redistribution),]
+redist$countryname1[redist$countryname=="Bolivia"] <- 1
+redist$countryname1[redist$countryname=="Peru"] <- 2
+redist$countryname1[redist$countryname=="Guatemala"] <- 3
+redist$countryname1[redist$countryname=="Ecuador"] <- 4
+redist$countryname1[redist$countryname=="Honduras"] <- 5
+redist$countryname1[redist$countryname=="El Salvador"] <- 6
+redist$countryname1[redist$countryname=="Mexico"] <- 7
+redist$countryname1[redist$countryname=="Colombia"] <- 8
+redist$countryname1[redist$countryname=="Panama"] <-  9
+redist$countryname1[redist$countryname=="Brazil"] <- 10
+redist$countryname1[redist$countryname=="Paraguay"] <- 11
+redist$countryname1[redist$countryname=="Uruguay"] <- 12
+redist$countryname1[redist$countryname=="Chile"] <- 13
+redist$countryname1[redist$countryname=="Argentina"] <- 14
+redist$countryname1[redist$countryname=="Costa Rica"] <- 15
+redist$countryname1[redist$countryname=="Dominican Republic"] <- 16
+redist$countryname1[redist$countryname=="Nicaragua"] <- 17
+redist$countryname1 <- factor(redist$countryname1,
+levels = c(1:17),
+labels = c("Bolivia",
+"Peru",
+"Guatemala",
+"Ecuador",
+"Honduras",
+"El Salvador",
+"Mexico",
+"Colombia",
+"Panama",
+"Brazil",
+"Paraguay",
+"Uruguay",
+"Chile",
+"Argentina",
+"Costa Rica",
+"Dominican Republic",
+"Nicaragua"))
+redist$order <- factor(redist$countryname,
+levels = c("Bolivia",
+"Peru",
+"Guatemala",
+"Ecuador",
+"Honduras",
+"El Salvador",
+"Mexico",
+"Colombia",
+"Panama",
+"Brazil",
+"Paraguay",
+"Uruguay",
+"Chile",
+"Argentina",
+"Costa Rica",
+"Dominican Republic",
+"Nicaragua"),
+labels = c(1:17))
+
+#Figure 1: Preference for redistribution by countries
+  figure1 = ggplot(data = redist, aes(x=reorder(countryname1, order), y = Freq, fill = factor(redistribution))) + geom_bar(stat = "identity", position = position_stack(reverse = TRUE)) + coord_flip() + labs(x = "", y = "", fill="") + guides(fill = guide_legend(reverse = TRUE)) + 
+  scale_fill_discrete(name = "", labels = c("1 (Disagree)", "2", "3", "4", "5", "6", "7 (Agree)")) +
+  scale_y_continuous(labels = function(Freq){paste0(Freq, "%")}) +
+  theme(panel.background = element_rect(fill = "white"), 
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12))
+
+figure1
+ggsave("Graphs/Figure1.png", plot=figure1, height = 4, units="in")
+
+#Black & white
+figure1_bn = figure1 + scale_fill_grey(start=0.8, end=0.2, name = "", labels = c("1 (Disagree)", "2", "3", "4", "5", "6", "7 (Agree)")) 
+figure1_bn
+ggsave("Graphs/Figure1_bn.png", plot=figure1_bn, height = 4, units="in")
+
+
+```
+
+
+```{r Country and year 1, echo=TRUE, message=FALSE, warning=FALSE}
+lapop1=as.data.frame(lapop1) #Transformation to Data Frame
+lapop1$year = as.factor(lapop1$year)
+
+#Figure 2: Preference for redistribution by country and year
+figure2 = ggplot(lapop1, aes(x= redistribution,  colour= year)) + 
+  geom_line(aes(y = ..prop.., fill = factor(..x..)), stat="count", binwidth = 1, size = 1) +
+  xlim(1, 7) +
+  facet_wrap(~countryname, ncol=3) +
+  labs(x = "Preference for redistribution", y = "", fill="") +
+  scale_colour_brewer(palette = "Set1", name= "Wave") +
+  #scale_color_grey(start=0.8, end=0.2, name="Wave") +  
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(breaks = c(1:7)) +
+  theme(
+    axis.text=element_text(size=15),
+        strip.text=element_text(size=15),
+        legend.text=element_text(size=15),
+        legend.title=element_text(size=15),
+        legend.key.size=unit(0.5,"cm"),
+        legend.position = "bottom",
+        panel.background = element_rect(fill = "white")) +
+  theme_hc()
+  
+figure2
+ggsave("Graphs/Figure2.png", plot=figure2, height = 10, width = 9, units="in")
+
+#Black & white
+figure2_bn = figure2 + scale_color_grey(start=0.9, end=0.1, name="Wave") 
+figure2_bn
+ggsave("Graphs/Figure2_bn.png", plot=figure2_bn, height = 10, width = 9, units="in")
+
+
+```
+
+
+```{r Country and year 2, echo=TRUE, message=FALSE, warning=FALSE}
+
+#Figure 2b - Preference for redistribution by country and year
+redis_year = with(lapop1, tapply(redistribution, list(year), mean))
+redis_year = as.data.frame(redis_year)
+
+#Figure 2b - Preference for redistribution by country and year
+redis_country_year = with(lapop1, tapply(redistribution, list(countryname, year), mean))
+redis_country_year = as.data.frame(redis_country_year)
+
+redis_country_year =as.data.frame(setDT(redis_country_year, keep.rownames = TRUE)[])
+
+redis_country_year1 <- melt(redis_country_year, id=c("rn"))
+
+figure2b <- ggplot(redis_country_year1, aes(variable, value))+
+  geom_bar(stat = "identity", fill = "#FF6666") +
+    labs(x = "Year", y =  "Preference for redistribution") + 
+  facet_wrap(~ rn, ncol = 3)  +
+  scale_y_continuous(limits=c(1,7), breaks = c(1,2,3,4,5,6,7), oob = rescale_none) + 
+  theme(
+      axis.text=element_text(size=13),
+          strip.text=element_text(size=15),
+          legend.text=element_text(size=15),
+          legend.title=element_text(size=15),
+          legend.key.size=unit(0.5,"cm"),
+          legend.position = "bottom",
+          panel.background = element_rect(fill = "white")) +
+    theme_hc()
+
+figure2b
+ggsave("Graphs/Figure2b.png", plot=figure2b, height = 10, width = 9, units="in")
+
+figure2b_bn = figure2b + geom_bar(stat = "identity", fill = "#333333") + facet_wrap(~rn, ncol=3)
+figure2b_bn
+ggsave("Graphs/Figure2b_bn.png", plot=figure2b_bn, height = 10, width = 9, units="in")
+```
+
++ Average preference for redistribution by decile of income by country
+
+```{r Country and income, echo=TRUE, message=FALSE, warning=FALSE}
+
+#Figure 3: Average redistribution preference of income deciles, by country
+redis_decile = with(lapop1, tapply(redistribution, list(countryname, decile_f), mean))
+redis_decile = as.data.frame(redis_decile)
+redis_decile = as.data.frame(setDT(redis_decile, keep.rownames = TRUE)[])
+
+redis_decile1 <- melt(redis_decile, id=c("rn"))
+
+figure3 <- ggplot(redis_decile1, aes(variable, value))+
+  geom_bar(stat = "identity", fill = "#FF6666") +
+    labs(x = "Household income", y =  "Preference for redistribution") + 
+  facet_wrap(~ rn, ncol = 3)  +
+  scale_y_continuous(limits=c(1,7), breaks = c(1,2,3,4,5,6,7), oob = rescale_none) + 
+  theme_hc()
+
+figure3
+ggsave("Graphs/Figure3.png", plot=figure3, height = 10, width = 9, units="in")
+
+#Black & white
+figure3_bn = figure3 + geom_bar(stat = "identity", fill = "#333333") + facet_wrap(~rn, ncol=3)
+figure3_bn
+ggsave("Graphs/Figure3_bn.png", plot=figure3_bn, height = 10, width = 9, units="in")
+
+
+#Table
+redis_decile_country <- with(lapop1, tapply(redistribution, list(countryname), mean))
+redis_decile_country = as.data.frame(redis_decile_country)
+redis_decile_country = as.data.frame(setDT(redis_decile_country, keep.rownames = TRUE)[])
+colnames(redis_decile_country) = c("rn", "Total")
+
+redis_decile = left_join(redis_decile, redis_decile_country) %>% 
+  rename(country = rn)
+redis_decile
+print(xtable(redis_decile), include.rownames=FALSE)
+
+```
+
+```{r Country income and year, echo=TRUE, message=FALSE, warning=FALSE}
+
+#Figure 3b: Average redistribution preference of income deciles, by country and year
+
+redis_decile_year = with(lapop1, tapply(redistribution, list(countryname, year, decile_f), mean))
+redis_decile_year = as.data.frame(redis_decile_year)
+
+redis_decile_year = as.data.frame(setDT(redis_decile_year, keep.rownames = TRUE)[])
+
+redis_decile_year1 <- melt(redis_decile_year, id=c("rn"))
+redis_decile_year1$variable = as.character(redis_decile_year1$variable)
+redis_decile_year2 = separate(redis_decile_year1, variable, into=c("year", "decile"))
+
+colnames(redis_decile_year2) = c("countryname", "year", "decile", "redistribution")
+redis_decile_year2$redistribution = as.numeric(redis_decile_year2$redistribution)
+redis_decile_year2$decile = as.numeric(redis_decile_year2$decile)
+redis_decile_year2$year = as.factor(redis_decile_year2$year)
+redis_decile_year2$countryname = as.factor(redis_decile_year2$countryname)
+
+
+figure3b = ggplot(redis_decile_year2, aes(x= decile,  y = redistribution, colour = year)) + 
+  geom_line() +
+  xlim(1, 7) +
+  facet_wrap(~countryname, ncol=3) +
+  labs(x = "Household income", y = "Preference for redistribution", fill="") +
+  scale_colour_brewer(palette = "Set1", name= "Wave") +
+  scale_x_continuous(breaks = c(1:10)) +
+  theme(
+    axis.text=element_text(size=15),
+        strip.text=element_text(size=15),
+        legend.text=element_text(size=15),
+        legend.title=element_text(size=15),
+        legend.key.size=unit(0.5,"cm"),
+        legend.position = "bottom",
+        panel.background = element_rect(fill = "white")) +
+  theme_hc()
+figure3b
+
+ggsave("Graphs/Figure3b.png", plot=figure3b, height = 10, width = 9, units="in")
+
+
+#Black & white
+figure3b_bn = figure3b + 
+  ylim(1,7) +
+  scale_color_grey(start=0.8, end=0.2, name="Wave")
+figure3b_bn
+
+ggsave("Graphs/Figure3b_bn.png", plot=figure3b_bn, height = 10, width = 9, units="in")
+
+```
+
++ Average preference for redistribution by wave and country
+
+```{r Between countries, echo=TRUE, message=FALSE, warning=FALSE}
+
+between = aggregate(lapop, by=list(lapop$country), FUN=mean, na.rm=TRUE) 
+# between_sv = between %>% 
+#   filter(Group.1!="VEN")
+
+#Figure 4: Average redistribution preference and average inequality, by country
+
+figure4= ggplot(between, 
+            aes(x= gini_mean, y= redistribution, label=Group.1)) +
+  geom_point() + 
+  geom_smooth(method = "lm", colour="black") +
+  geom_text(aes(label=Group.1),hjust=-0.1, vjust=-0.5, size=3.5) +
+  labs(x = "GINI 2008-2018", y = "Preference for redistribution 2008-2018", fill="") +
+  scale_y_continuous("Average preference for redistribution 2008-2018", limits = c(4.8,6.2),
+                     breaks = c(5,5.5,6)) +
+  scale_x_continuous("Average GINI 2008-2018", limits = c(40,55), 
+                     breaks = c(40,45,50,55)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+
+figure4
+ggsave("Graphs/Figure4.png", plot=figure4, height = 5, units="in")
+
+
+#Figure 5: Average redistribution preference and average economic development, by country
+
+figure5 = ggplot(between, 
+            aes(x= gdp_mean, y= redistribution, label=Group.1)) +
+  geom_point() + 
+  geom_smooth(method = "lm", colour="black") +
+  geom_text(aes(label=Group.1),hjust=-0.1, vjust=-0.5, size=3.5) +
+  labs(x = "GDP per capita 2008-2018", y = "Preference for redistribution 2008-2018", fill="") +
+  scale_y_continuous("Average preference for redistribution 2008-2018", limits = c(4.8,6.2), 
+                     breaks = c(5,5.5,6)) +
+  scale_x_continuous("Average GDP per capita 2008-2018", limits = c(0,15),
+                     breaks = c(0,5,10,15)) +  
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+
+figure5
+ggsave("Graphs/Figure5.png", plot=figure5, height = 5, units="in")
+
+```
+
+```{r Within countries 1, echo=TRUE, message=FALSE, warning=FALSE}
+
+lapop_country_year = aggregate(lapop, 
+                          by=list(lapop$country, lapop$countryname, lapop$wave, 
+                                  lapop$country_wave), FUN=mean, na.rm=TRUE) 
+lapop_country_year1 = select(lapop_country_year,Group.1, Group.2, Group.3, Group.4,
+                      redistribution, gini, gdp, sysconf)
+colnames(lapop_country_year1) <- c("country", "countryname", "wave", "country_wave", "redistribution", "gini", "gdp", "sysconf")
+
+lapop_country_year1 = lapop_country_year1 %>% 
+  mutate(year_rec = ifelse(wave == 2008, "08", 1)) %>% 
+  mutate(year_rec = ifelse(wave == 2010, "10", year_rec)) %>% 
+  mutate(year_rec = ifelse(wave == 2012, "12", year_rec)) %>% 
+  mutate(year_rec = ifelse(wave == 2014, "14", year_rec)) %>% 
+  mutate(year_rec = ifelse(wave == 2016, "16", year_rec)) %>% 
+  mutate(year_rec = ifelse(wave == 2018, "18", year_rec))
+
+lapop_country_year1$country_wave_rec = paste0(lapop_country_year1$country,sep="",lapop_country_year1$year_rec)
+
+
+#Figure 6: Average redistribution preference and inequality, by country and year
+
+figure6= ggplot(lapop_country_year1, 
+            aes(x= gini, y= redistribution,  colour=country)) +  geom_point(size = 2, alpha = .8) + 
+  geom_smooth(size = 0.8, method = "lm", se = FALSE) +
+  geom_text(aes(label=country_wave_rec),hjust=0.5, vjust=-0.6, size=2.5) + 
+  labs(x = "GINI", y = "Preference for redistribution") + 
+  scale_y_continuous("Average preference for redistribution", limits = c(4.5,6.5)) + 
+  scale_x_continuous("GINI", limits = c(35,55), 
+                     breaks = c(35,40,45,50,55)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+
+figure6
+ggsave("Graphs/Figure6.png", plot=figure6, height = 5, units="in")
+
+#Black & white
+figure6_bn = figure6 +  scale_color_grey(start=0.0, end=0.0) 
+figure6_bn
+ggsave("Graphs/Figure6_bn.png", plot=figure6_bn, height = 5, units="in")
+
+
+#Black & white (simbols)
+figure6_bna= ggplot(lapop_country_year1,
+            aes(x= gini, y= redistribution,  colour=country, shape=country)) +  geom_point(size = 2, alpha = .8) +
+  geom_smooth(size = 0.8, method = "lm", se = FALSE) +
+  geom_text(aes(label=country_wave_rec),hjust=0.5, vjust=-0.6, size=2.5) +
+  labs(x = "GINI", y = "Preference for redistribution") +
+  scale_y_continuous("Average preference for redistribution", limits = c(4.5,6.5)) +
+  scale_x_continuous("GINI", limits = c(35,55),
+                     breaks = c(35,40,45,50,55)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white")) +
+    scale_shape_manual(name = "País", values = c(1:18))
+
+figure6_bna = figure6_bna +  scale_color_grey(start=0.0, end=0.0) +   
+  scale_shape_manual(name = "Países", values = c(1:18))
+
+
+figure6_bna
+ggsave("Graphs/Figure6_bna.png", plot=figure6_bna, height = 5, units="in")
+
+
+#Figure 7: Average redistribution preference and economic development, by country and year
+
+figure7= ggplot(lapop_country_year1, 
+            aes(x= gdp, y= redistribution,  colour=country)) +  geom_point(size = 2, alpha = .8) + 
+  geom_smooth(size = 0.8, method = "lm", se = FALSE) +
+  geom_text(aes(label=country_wave_rec),hjust=0.5, vjust=-0.6, size=2.5) + 
+  labs(x = "GDP per capita", y = "Preference for redistribution") + 
+  scale_y_continuous("Average preference for redistribution", limits = c(4.5,6.5)) + 
+  scale_x_continuous("GDP per capita", limits = c(0,16), 
+                     breaks = c(0,4,8,12,16)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+
+figure7
+ggsave("Graphs/Figure7.png", plot=figure7, height = 5, units="in")
+
+#Black & white
+figure7_bn = figure7 +  scale_color_grey(start=0.0, end=0.0) 
+figure7_bn
+ggsave("Graphs/Figure7_bn.png", plot=figure7_bn, height = 5, units="in")
+
+#Black & white (simbols)
+figure7_bna= ggplot(lapop_country_year1, 
+            aes(x= gdp, y= redistribution,  colour=country, shape=country)) +  geom_point(size = 2, alpha = .8) + 
+  geom_smooth(size = 0.8, method = "lm", se = FALSE) +
+  geom_text(aes(label=country_wave_rec),hjust=0.5, vjust=-0.6, size=2.5) + 
+  labs(x = "GDP per capita", y = "Preference for redistribution") + 
+  scale_y_continuous("Average preference for redistribution", limits = c(4.5,6.5)) + 
+  scale_x_continuous("GDP per capita", limits = c(0,16), 
+                     breaks = c(0,4,8,12,16)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+
+figure7_bna = figure7_bna +  scale_color_grey(start=0.0, end=0.0) +   
+  scale_shape_manual(name = "Países", values = c(1:18))
+
+
+
+figure7_bna
+ggsave("Graphs/Figure7_bna.png", plot=figure7_bna, height = 5, units="in")
+
+
+```
+
+```{r Within countries 2, echo=TRUE, message=FALSE, warning=FALSE}
+
+#Figure 6a: Average redistribution preference and inequality, by country and year
+
+figure6a= ggplot(lapop_country_year1, 
+            aes(x= gini, y= redistribution, label=country)) +
+  geom_point(size = 1.5, alpha = 0.8) + 
+  stat_smooth(size = 1, method = "lm", se = FALSE, fullrange = TRUE, colour = "black") +   
+  geom_text(aes(label=country),hjust=-0.1, vjust=-0.5, size=2.5, show.legend = FALSE) +
+  labs(x = "Inequality", y =  "Preference for redistribution") + 
+  scale_color_grey(start=0.8, end=0.2, name="Wave") +  
+  scale_y_continuous( "Average preference for redistribution", limits = c(4.5,6.6), 
+                     breaks = c(4.5,5, 5.5, 6, 6.5)) +
+  scale_x_continuous("GINI", limits = c(39,60), 
+                     breaks = c(40,45,50,55,60)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="bottom",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=10),
+        legend.text=element_text(size=10),
+        legend.title=element_text(size=10),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white")) +  
+  facet_wrap(~ wave) 
+
+figure6a
+ggsave("Graphs/Figure6a.png", plot=figure6a, height = 5, units="in")
+
+
+#Figure 7a: Average redistribution preference and economic development, by country and year (facet)
+
+figure7a= ggplot(lapop_country_year1, 
+            aes(x= gdp, y= redistribution, label=country)) +
+  geom_point(size = 1.5, alpha = 0.8) + 
+  stat_smooth(size = 1, method = "lm", se = FALSE, fullrange = TRUE, colour = "black") +   
+  geom_text(aes(label=country),hjust=-0.1, vjust=-0.5, size=2.5, show.legend = FALSE) +
+  labs(x = "Inequality", y =  "Preference for redistribution") + 
+  scale_color_grey(start=0.8, end=0.2, name="Wave") +  
+  scale_y_continuous( "Average preference for redistribution", limits = c(4.5,6.6), 
+                     breaks = c(4.5,5, 5.5, 6, 6.5)) +
+  scale_x_continuous("GDP per capita", limits = c(0,16), 
+                     breaks = c(0,4,8,12,16)) +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="bottom",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=10),
+        legend.text=element_text(size=10),
+        legend.title=element_text(size=10),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white")) +  
+  facet_wrap(~ wave) 
+
+figure7a
+ggsave("Graphs/Figure7a.png", plot=figure7a, height = 5, units="in")
+
+figure6a
+figure7a
+
+```
+
+
+

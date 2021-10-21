@@ -1,0 +1,905 @@
+
++ Multilevel estimation: Weighted models
+
+
+Libraries
+
+```{r Packages, message=FALSE, warning=FALSE, include=FALSE}
+library(pacman)
+p_load(lme4, dplyr, magrittr, tidyverse, jtools, texreg, ggstance, sjPlot, sjstats, ggplot2, xtable, interplot, janitor, matrixStats, influence.ME, data.table, MDmisc, ggeffects, sjPlot, skimr, sjmisc, sjlabelled, glmmTMB, pals)
+
+```
+
+Load data 
+
+```{r Database, echo=TRUE, message=FALSE, warning=FALSE}
+#Load database
+rm(list = ls())
+load("lapop_final.RData")
+
+#Clean names
+lapop = lapop %>% 
+  mutate(Redistribution = redistribution,
+         Income = decile,
+         Man = man_f,
+         Age = age, 
+         Political = ideology_f, 
+         Left = left, 
+         Married = married_f, 
+         SystemConfidence=sysconf, 
+         Employment=employment_r, 
+         Education=education_r, 
+         Urban=zone, 
+         Income_Decile=decile_f, 
+         GINI=gini,
+         GDP=gdp,
+         GINI_Mean=gini_mean, 
+         GINI_Diff=gini_dif, 
+         GDP_Mean=gdp_mean, 
+         GDP_Diff=gdp_dif,
+         Welfare = welfare,
+         Country = countryname,
+         CountryWave = country_wave,
+         Year = year,
+         Decile_d10 = decile_d10,
+         Decile_d1 = decile_d1,
+         Income2 = Income*Income)
+
+#Exclude Venezuela
+lapop_ven = lapop
+
+country_vars_waves_ven = country_vars_waves
+
+lapop = lapop %>% 
+  filter(country!="VEN")
+
+country_vars_waves = country_vars_waves %>% 
+  filter(country!="VEN")
+
+#Summary
+names(lapop)
+# stargazer(lapop,title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
+# skim(lapop)
+
+
+
+```
+
+Models
+
+```{r Nule model, echo=TRUE, message=FALSE, warning=FALSE}
+
+#Null model: Country Year (with Venezuela)
+model_w0_ven = lmer(Redistribution ~ 1 + (1 | CountryWave) + (1 |Country), data=lapop_ven, weights=wt)
+screenreg(model_w0_ven, stars = c(0.01,0.05,0.1))
+
+#Influence tests
+inf.m0 <- influence(model_w0_ven, "Country")
+
+#Cook D
+cooks.distance(inf.m0,
+parameter=1, sort=TRUE)
+
+jpeg("Graphs/CookD.jpg", width=600, height=400)
+
+plot(inf.m0, which="cook",
+cutoff=.17, sort=TRUE,
+xlab="Cook´s Distance",
+ylab="Country", width=60, height=40)
+
+while (!is.null(dev.list()))  dev.off()
+
+#Null model: Country Year 
+model_w0 = lmer(Redistribution ~ 1 + (1 | CountryWave) + (1 |Country), data=lapop, weights=wt)
+screenreg(model_w0, stars = c(0.01,0.05,0.1))
+
+#Intraclass correlation estimation (ICC)
+icc(model_w0)
+
+# ICC (Country): 0.0103
+# ICC (CountryWave): 0.0370
+# ICC (individual): 0.9527
+
+
+```
+
++ Multilevel estimation: individual models
+
+
+```{r Individual variables, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+
+#DECILES
+
+#LINEAL
+
+##1. Only income
+model_w1 = lme4::lmer(Redistribution ~ 1 + Income
+                + Year + (1 | CountryWave) 
+                + (1 | Country), data=lapop, weights=wt)
+
+##2. Individual predictors 
+model_w2 = lme4::lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+
+#FACTOR
+
+##1.Model: income
+model_w1b = lme4::lmer(Redistribution ~ 1 + Income_Decile
+                + Year + (1 | CountryWave) 
+                + (1 | Country), data=lapop, weights=wt)
+
+##2. individual predictors
+model_w2b = lme4::lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+
+#CUADRÁTICO
+
+##1. Only income
+model_w1c = lme4::lmer(Redistribution ~ 1 + Income + I(Income^2)
+                + Year + (1 | CountryWave) 
+                + (1 | Country), data=lapop, weights=wt)
+
+##2. Individual predictors 
+model_w2c = lme4::lmer(Redistribution ~ 1 + Income + I(Income^2) + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+
+#DUMMIES
+
+##Decile 10
+
+model_w2_10 = lme4::lmer(Redistribution ~ 1 + Decile_d10 + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+##Decile 1
+model_w2_1 = lme4::lmer(Redistribution ~ 1 + Decile_d1 + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+
+#Table
+screenreg(list(model_w2, model_w2b, model_w2c),  stars = c(0.01,0.05,0.1))
+
+# texreg(list(model_w2, model_w2b, model_w2c),
+#        stars = c(0.01,0.05,0.1), dcolumn = TRUE)
+# 
+# 
+# model_w2_pv <- ggpredict(model_w2, "Income")
+# model_w2_pv
+# plot(model_w2_pv)
+# 
+# model_w2b_pv <- ggpredict(model_w2b, "Income_Decile")
+# model_w2b_pv
+# plot(model_w2b_pv)
+# 
+# 
+# 
+# #Differences between linear and quadratic
+# ggplot(lapop,
+#        aes(x = Income, y = Redistribution)) +
+#   geom_point() +
+#   geom_smooth(method = "lm",
+#               aes(color = "linear"),
+#               se = FALSE) +
+#   geom_smooth(method = "lm",
+#               formula = y ~ x + I(x^2),
+#               aes(color = "quadratic"),
+#               se = FALSE) +
+#   theme_bw()
+
+```
+
+
++ Multilevel estimation: cross-level models (deciles)
+
+
+```{r Country variables, echo=TRUE, message=FALSE, warning=FALSE}
+
+###3. Model: individual predictors + GINI (H1 Y H2)
+model_w3 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI_Mean + GINI_Diff + Year
+                + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+####4 Model: individual predictors + GINI  + GDP
+model_w4 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI_Mean + GINI_Diff
+                + GDP_Mean + GDP_Diff + Year
+                + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+#####5. Model: individual predictors + GINI  + GDP + Welfare State (H3)
+model_w5 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI_Mean + GINI_Diff
+                + GDP_Mean + GDP_Diff
+                + Welfare + Year
+                + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+######6. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (H4.2)
+model_w6 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI_Mean + GINI_Diff
+                + GDP_Mean + GDP_Diff + Year
+                + (1 + Income| CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
+
+#######7. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GINI) (H5)
+model_w7 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI_Mean + GINI_Diff
+                + GDP_Mean + GDP_Diff
+                + Income*GINI_Mean + Income*GINI_Diff + Year
+                + (1 + Income | CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
+
+########8. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GDP)
+model_w8 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI_Mean + GINI_Diff
+                + GDP_Mean + GDP_Diff
+                + Income*GDP_Mean + Income*GDP_Diff + Year
+                + (1 + Income | CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
+
+#######7. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GINI) (H5)
+model_w7_fe = glm(Redistribution ~ Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI + GDP +
+                + Income*GINI + Year + Country
+                , data=lapop, weights=wt)
+
+########8. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GDP)
+model_w8_fe = glm(Redistribution ~ Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + GINI + GDP +
+                + Income*GDP + Year + Country
+                , data=lapop, weights=wt)
+
+# #######7. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GINI) (H5)
+# model_w7_c = lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+#                 + Political + SystemConfidence + Employment + Education 
+#                 + Urban + GINI_Mean + GINI_Diff
+#                 + GDP_Mean + GDP_Diff
+#                 + Income_Decile*GINI_Mean + Income_Decile*GINI_Diff + Year
+#                 + (1 + Income_Decile | CountryWave) + (1 + Income_Decile | Country), data=lapop)
+# 
+# ########8. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GDP)
+# model_w8_c = lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+#                 + Political + SystemConfidence + Employment + Education 
+#                 + Urban + GINI_Mean + GINI_Diff
+#                 + GDP_Mean + GDP_Diff
+#                 + Income_Decile*GDP_Mean + Income_Decile*GDP_Diff + Year
+#                 + (1 + Income_Decile | CountryWave) + (1 + Income_Decile | Country), data=lapop)
+
+#Table
+screenreg(list(model_w1, model_w2, model_w4, model_w5, model_w6),  stars = c(0.01,0.05,0.1))
+
+# texreg(list(model_w1, model_w2, model_w4, model_w6), 
+#        stars = c(0.01,0.05,0.1), dcolumn = TRUE)
+
+#Table
+screenreg(list(model_w7, model_w8),  stars = c(0.01,0.05,0.1))
+
+# texreg(list(model_w7, model_w8), 
+#        stars = c(0.01,0.05,0.1), dcolumn = TRUE)
+
+screenreg(list(model_w7, model_w8, model_w7_fe, model_w8_fe
+               #, model_w7_fe_c, model_w8_fe_c
+               ),  stars = c(0.01,0.05,0.1))
+
+```
+
+```{r Categorical marginal effects}
+
+#CATEGORICAL INTERACTIONS
+
+# #######7. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GINI) (H5)
+# model_w7c = lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+#                 + Political + SystemConfidence + Employment + Education 
+#                 + Urban + GINI_Mean + GINI_Diff
+#                 + GDP_Mean + GDP_Diff
+#                 + Income_Decile*GINI_Mean + Income_Decile*GINI_Diff + Year
+#                 + (1 + Income_Decile | CountryWave) + (1 + Income_Decile | Country), data=lapop, weights=wt)
+# 
+# ########8. Model: country, country_Year  Model: individual predictors + GINI + GDP (Income Aleatorio) (Income*GDP)
+# model_w8c = lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+#                 + Political + SystemConfidence + Employment + Education 
+#                 + Urban + GINI_Mean + GINI_Diff
+#                 + GDP_Mean + GDP_Diff
+#                 + Income_Decile*GDP_Mean + Income_Decile*GDP_Diff + Year
+#                 + (1 + Income_Decile | CountryWave) + (1 + Income_Decile | Country), data=lapop, weights=wt)
+
+```
+
+
+
++ Multilevel estimation: Random effect of income
+
+```{r Random effect, echo=TRUE, message=FALSE, warning=FALSE}
+#Random income effect on redistributive preference by country: intercept and slope (Model includes weight) 
+figure10=plot_model(model_w6, type = "re", 
+                   show.legend = FALSE,
+                   show.values = TRUE,
+                   facet.grid = FALSE,
+                   y.offset = .4,
+                   value.offset = .4,
+                   value.size = 3.5,
+                   # color="red",
+                   sort.est= "Income",
+                   title = " ") 
+figure10
+
+figure10b = figure10[[2]] + scale_y_continuous(limits = c(-1, 0.5)) + scale_color_grey(start=0.6, end=0.2) + 
+  theme(panel.grid = element_line(colour = "grey"), panel.grid.major.y = element_line(colour = "grey"),panel.background = element_rect(fill = "white")) + 
+  geom_hline(yintercept = 0, linetype = "dashed")
+
+figure10c = figure10[[2]] + scale_y_continuous(limits = c(-0.4, 0.4)) + scale_color_grey(start=0.6, end=0.2) + 
+  theme(panel.grid = element_line(colour = "grey"), panel.grid.major.y = element_line(colour = "grey"),panel.background = element_rect(fill = "white")) + 
+  geom_hline(yintercept = 0, linetype = "dashed")
+
+
+try(dir.create("Graphs"))
+
+figure10b
+ggsave("Graphs/Figure10.png", plot=figure10b, height = 5, units="in")
+
+figure10c
+ggsave("Graphs/Figure10a.png", plot=figure10c, height = 5, units="in")
+
+ranef(model_w6)
+
+
+#Figure
+me = ggpredict(model_w6, terms = c("Income", "Country"), type = "re")
+
+figure10d = plot(me, 
+                 show.title = FALSE) +
+  labs(
+    x = "Income (deciles)", 
+    y = "Preference for redistribution", 
+    title = " "
+  )  +
+  scale_x_continuous("Income (deciles)", limits = c(1,10), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
+  theme(panel.grid.minor.x = element_blank()) + 
+  scale_fill_manual(values=as.vector(polychrome(17)))
+
+figure10d
+
+ggsave("Graphs/Figure10d.png", plot=figure10d)
+
+```
+
++ Multilevel estimation: Marginal Effects
+
+```{r Marginal effects, echo=TRUE, message=FALSE, warning=FALSE}
+#Figure 5: Marginal effects
+#GINI (Mean)
+
+figure5a = interplot(m = model_w7, var1 = 'Income', var2 = 'GINI_Mean', ci = 0.95) + 
+  xlab("GINI [BE]") +
+  ylab("Marginal effect of income") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme(axis.text=element_text(size=14),
+        axis.title.y = element_text(size =14),
+        axis.title.x = element_text(size = 14)) +
+  theme(panel.grid.major = element_line(colour = "grey"),panel.background = element_rect(fill = "white"))
+figure5a
+ggsave("Graphs/Figure11a.png", plot=figure5a)
+
+#GINI (Change)
+figure5b = interplot(m = model_w7, var1 = 'Income', var2 = 'GINI_Diff', ci = 0.95) + 
+  xlab("GINI [WE]") +
+  ylab("Marginal effect of income") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme(axis.text=element_text(size=14),
+        axis.title.y = element_text(size =14),
+        axis.title.x = element_text(size = 14)) +
+  theme(panel.grid.major = element_line(colour = "grey"),panel.background = element_rect(fill = "white"))
+figure5b
+ggsave("Graphs/Figure11b.png", plot=figure5b)
+
+#GDP (Mean)
+figure5c = interplot(m = model_w8, var1 = 'Income', var2 = 'GDP_Mean', ci = 0.95) + 
+  xlab("GDP [BE]") +
+  ylab("Marginal effect of income") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme(axis.text=element_text(size=14),
+        axis.title.y = element_text(size =14),
+        axis.title.x = element_text(size = 14)) +
+  theme(panel.grid.major = element_line(colour = "grey"),panel.background = element_rect(fill = "white"))
+figure5c
+ggsave("Graphs/Figure11c.png", plot=figure5c)
+#GDP (Change)
+figure5d = interplot(m = model_w8, var1 = 'Income', var2 = 'GDP_Diff', ci = 0.95) + 
+  xlab("GDP [WE]") +
+  ylab("Marginal effect of income") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme(axis.text=element_text(size=14),
+        axis.title.y = element_text(size =14),
+        axis.title.x = element_text(size = 14)) +
+  theme(panel.grid.major = element_line(colour = "grey"),panel.background = element_rect(fill = "white"))
+figure5d
+ggsave("Graphs/Figure11d.png", plot=figure5d)
+
+
+```
+
+
++ Multilevel estimation: Predicted values
+
+
+```{r Predicted values, echo=TRUE, message=FALSE, warning=FALSE}
+
+
+#Automáticas
+
+#Desigualdad
+int_inc_ine = plot_model(model_w7, type = "int")
+#, colors = "greyscale"
+
+#Desarrollo económico
+int_inc_dev = plot_model(model_w8, type = "int")
+
+
+# #Desigualdad
+# int_inc_ine_c = plot_model(model_w7_fe_c, type = "int")
+# #, colors = "greyscale"
+# 
+# #Desarrollo económico
+# int_inc_dev_c = plot_model(model_w8_fe_c, type = "int")
+# 
+# int_inc_ine_c
+# int_inc_dev_c
+
+#Manuales
+
+#Desigualdad [BE]
+#int_inc_ine_ef1a = ggpredict(model_w7, terms = c("Income", "GINI_Mean"))
+int_inc_ine_ef1b = ggpredict(model_w7, terms = c("Income", "GINI_Mean [41.47, 47.78, 54.36]"))
+int_inc_ine_ef1c = ggpredict(model_w7, terms = c("Income", "GINI_Mean [41.47, 54.36]"))
+
+
+plot_int_inc_ine1 = plot(int_inc_ine_ef1c, 
+                 show.title = FALSE, ci.style = "errorbar", dot.size = 1.5) +
+  labs(
+    x = "Income (deciles)", 
+    y = "Preference for redistribution", 
+    title = " "
+  )  +
+  scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
+  theme(panel.grid.minor.x = element_blank())
+
+#Desigualdad [WE]
+#int_inc_ine_ef2a = ggpredict(model_w7, terms = c("Income", "GINI_Diff"))
+int_inc_ine_ef2b = ggpredict(model_w7, terms = c("Income", "GINI_Diff [-3.97, 0, 4.93]"))
+int_inc_ine_ef2c = ggpredict(model_w7, terms = c("Income", "GINI_Diff [-3.97, 4.93]"))
+
+shapes = c(15, 16) 
+shapes <- shapes[as.numeric(int_inc_ine_ef2c$group)]
+
+plot_int_inc_ine2 = plot(int_inc_ine_ef2c, 
+                 show.title = FALSE, ci.style = "errorbar", dot.size = 2.5) +
+  labs(
+    x = "Income (deciles)", 
+    y = "Preference for redistribution", 
+    title = " ",
+    colour ="GINI [WE]"
+  )  +
+  scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
+  theme(panel.grid.minor.x = element_blank())
+
+plot_int_inc_ine3 = plot(int_inc_ine_ef2b, 
+                 show.title = FALSE, ci.style = "errorbar", dot.size = 2.5) +
+  labs(
+    x = "Income (deciles)", 
+    y = "Preference for redistribution", 
+    title = " ",
+    colour ="GINI [WE]"
+  )  +
+  scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
+  theme(panel.grid.minor.x = element_blank())
+
+#Desarrollo económico [BE]
+#int_inc_dev_ef1a = ggpredict(model_w8, terms = c("Income", "GDP_Mean"))
+int_inc_dev_ef1b = ggpredict(model_w8, terms = c("Income", "GDP_Mean [1.65, 7.18, 13.98]"))
+int_inc_dev_ef1c = ggpredict(model_w8, terms = c("Income", "GDP_Mean [1.65, 13.98]"))
+
+plot_int_inc_dev1 = plot(int_inc_dev_ef1c, 
+                 show.title = FALSE, ci.style = "errorbar", dot.size = 1.5) +
+  labs(
+    x = "Income (deciles)", 
+    y = "Preference for redistribution", 
+    title = " "
+  )  +
+  scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
+  theme(panel.grid.minor.x = element_blank())
+
+#Desarrollo económico [WE]
+#int_inc_dev_ef2a = ggpredict(model_w8, terms = c("Income", "GDP_Diff"))
+int_inc_dev_ef2b = ggpredict(model_w8, terms = c("Income", "GDP_Diff [-2.33, 0, 1.95]"))
+int_inc_dev_ef2c = ggpredict(model_w8, terms = c("Income", "GDP_Diff [-2.33, 1.95]"))
+
+plot_int_inc_dev2 = plot(int_inc_dev_ef2c, 
+                 show.title = FALSE, ci.style = "errorbar", dot.size = 1.5) +
+  labs(
+    x = "Income (deciles)", 
+    y = "Preference for redistribution", 
+    title = " "
+  )  +
+  scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
+  theme(panel.grid.minor.x = element_blank())
+
+
+#Diseno en gris
+plot_int_inc_ine2_gray = plot_int_inc_ine2 +
+  scale_y_continuous("Preference for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
+  scale_colour_grey(start=0.6, end=0.1, name="GINI [WE]", labels = c("Max decrease", "Max increase"))
+
+ggsave("Graphs/Figure12a.png", plot=plot_int_inc_ine2_gray, height = 5, units="in")
+
+plot_int_inc_ine3_gray = plot_int_inc_ine3 +
+  scale_y_continuous("Preference for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
+  scale_colour_manual(values = c("#818181", "#CCCCCC", "#333333"), name="GINI [WE]", labels = c("Max decrease", "No changes", "Max increase"))
+  scale_colour_grey(start=0.8, end=0.1, name="GINI [WE]", labels = c("Max decrease", "No changes", "Max increase"))
+
+ggsave("Graphs/Figure12b.png", plot=plot_int_inc_ine3_gray, height = 4, units="in")
+
+
+plot_int_inc_ine1
+plot_int_inc_ine2
+plot_int_inc_dev1
+plot_int_inc_dev2
+
+int_inc_ine
+int_inc_dev
+
+figure5a
+figure5b
+figure5c
+figure5d
+
+summary(country_vars_waves$gini_mean)
+summary(country_vars_waves$gini_dif)
+summary(country_vars_waves$gdp_mean)
+summary(country_vars_waves$gdp_dif)
+
+
+```
+
+
++ Tables and complementary figures (annex)
+
+```{r Annexes1, echo=TRUE, message=FALSE, warning=FALSE}
+#Table_ Sample: Observations by country and Year
+lapop$cases=1
+sample = with(lapop, tapply(cases, list(Country, Year), sum))
+sample = as.data.frame(sample)
+sample$Total <- rowSums(sample[c("2008","2010","2012", "2014", "2016", "2018")])
+
+sample_country = as.data.frame(with(lapop, tapply(cases, list(Year), sum)))
+colnames(sample_country) = "Total"
+sample_country$Total = as.numeric(sample_country$Total)
+setDT(sample_country, keep.rownames = TRUE)[]
+sample_country2 <- data.frame(t(sample_country)) %>% 
+  row_to_names(row_number = 1)
+sample_country2[] <- lapply(sample_country2, function(x) as.numeric(as.character(x)))
+sample_country2$Total = rowSums(sample_country2)
+sample1 = rbind(sample, sample_country2)
+
+xtable(sample1, digits = 0)
+
+```
+
+```{r Annexes2, echo=TRUE, message=FALSE, warning=FALSE}
+
+#Table: Within- and between-country distribution of dependent and independent variables
+
+##Preference for redistribution
+
+#Country names
+lapop$countryname1 = as.factor(lapop$countryname)
+table(lapop$countryname1)
+
+#Mean by country
+redis_country_mean = with(lapop, tapply(redistribution, list(countryname1), mean))
+redis_country_mean = as.data.frame(redis_country_mean)
+redis_country_mean0 <- as.data.frame(redis_country_mean[ order(row.names(redis_country_mean)), ])
+
+#Sd by country
+redis_country_sd = with(lapop, tapply(redistribution, list(countryname1), sd))
+redis_country_sd = as.data.frame(redis_country_sd)
+
+#Sd by country-year
+redis_country_year = with(lapop, tapply(redistribution, list(countryname1, year), mean))
+redis_country_year = as.data.frame(redis_country_year)
+
+redis_country_year$total <- rowMeans(redis_country_year[c("2008", "2010", "2012", "2014", "2016", "2018")], na.rm=TRUE)
+
+redis_country_year1 = redis_country_year
+setDT(redis_country_year1, keep.rownames = TRUE)[]
+redis_country_year1 = redis_country_year1 %>% 
+  arrange(rn)
+
+redis_country_sdyear = as.matrix(redis_country_year)
+redis_country_sdyear = rowSds(redis_country_sdyear, na.rm=TRUE)
+
+
+##Country level variables
+
+lapop_names = lapop %>% 
+  distinct(country, countryname1)
+
+country_vars_waves_name = left_join(lapop_names, country_vars_waves)
+
+##GINI
+
+#Mean by country
+gini_country_mean = with(country_vars_waves_name, tapply(gini, list(countryname1), mean))
+gini_country_mean = as.data.frame(gini_country_mean)
+
+#Sd by country-year
+gini_country_year = with(country_vars_waves_name, tapply(gini, list(countryname1, year), mean))
+gini_country_year = as.data.frame(gini_country_year)
+
+gini_country_year$total <- rowMeans(gini_country_year[c("2008", "2010", "2012", "2014", "2016", "2018")], na.rm=TRUE)
+
+gini_country_sdyear = as.matrix(gini_country_year)
+
+gini_country_sdyear= rowSds(gini_country_sdyear, na.rm=TRUE)
+
+##GDP
+
+#Mean by country
+gdp_country_mean = with(country_vars_waves_name, tapply(gdp, list(countryname1), mean))
+gdp_country_mean = as.data.frame(gdp_country_mean)
+
+#Sd by country-year
+gdp_country_year = with(country_vars_waves_name, tapply(gdp, list(countryname1, year), mean))
+gdp_country_year = as.data.frame(gdp_country_year)
+
+gdp_country_year$total <- rowMeans(gdp_country_year[c("2008", "2010", "2012", "2014", "2016", "2018")], na.rm=TRUE)
+
+gdp_country_sdyear= as.matrix(gdp_country_year)
+
+gdp_country_sdyear = rowSds(gdp_country_sdyear, na.rm=TRUE)
+
+
+##Total
+redis_mean = round(mean(lapop$redistribution), 3)
+redis_sd = round(sd(lapop$redistribution), 3)
+
+gini_mean = round(mean(country_vars_waves$gini), 3)
+gini_sd = round(sd(country_vars_waves$gini), 3)
+
+gdp_mean = round(mean(country_vars_waves$gdp), 3)
+gdp_sd = round(sd(country_vars_waves$gdp), 3)
+
+annex2_total = c("Total", redis_mean, redis_sd, "", gini_mean, gini_sd, gdp_mean, gdp_sd)
+
+
+##Table
+annex2a = as.data.frame(cbind(redis_country_mean, redis_country_sd, redis_country_sdyear,
+                             gini_country_mean, gini_country_sdyear,
+                             gdp_country_mean, gdp_country_sdyear))
+
+setDT(annex2a, keep.rownames = TRUE)[]
+
+annex2a = annex2a %>% 
+  rename(countryname = rn) %>% 
+  arrange(countryname)
+
+#Add totals
+annex2 <- rbind(annex2a, c("Total", redis_mean, redis_sd, "", gini_mean, gini_sd, gdp_mean, gdp_sd))
+
+#Round numbers
+indexes = annex2 %>% 
+  dplyr::select(-countryname)
+
+countries = annex2 %>% 
+  dplyr::select(countryname)
+
+indexes[] <- lapply(indexes, function(x) as.numeric(as.character(x)))
+indexes[] <- lapply(indexes, function(x) if(is.numeric(x)) round(x, 3) else x)
+
+annex2c = cbind(countries, indexes)
+
+#Final table
+annex2 = xtable(annex2c, digits = 3)
+annex2
+
+names(annex2) = c("Country", "Redist Mean", "Redist SD total", "Redist SD years", "Gini Mean", "Gini SD years", "GDP Mean", "GDP SD years")
+print(xtable(annex2), include.rownames=FALSE, display = c("s","fg","d","d","d","d","d","d"))
+
+```
+
+
+```{r Annexes3, eval=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+#6.3#Inequality: Relationship "between" countries
+between = aggregate(lapop, by=list(lapop$country), FUN=mean, na.rm=TRUE) 
+lapop_country_Year1 = aggregate(lapop, by=list(lapop$country, lapop$Year), FUN=mean, na.rm=TRUE) 
+
+
+lapop_country_Year1
+
+figure63= ggplot(between, 
+                 aes(x= GINI_Mean, y= Redistribution, label=Group.1)) +
+  geom_point() + 
+  geom_smooth(method = "lm", colour="black") +
+  geom_text(aes(label=Group.1),hjust=-0.1, vjust=-0.5, size=3.5) +
+  labs(x = "Inequality", y = "Redistributive Preference", fill="") +
+  scale_y_continuous("Redistributive Preference", limits = c(4.8,6.2), 
+                     breaks = c(4.8,5.2,5.6,6)) +
+  scale_x_continuous("Inequality", limits = c(40,60),
+                     breaks = c(40,50,60)) +    
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+figure63
+ggsave("Graphs/Figure63.png", plot=figure63)
+
+#6.4#Inequality: Relationship "within" countries
+figure64= ggplot(lapop_country_Year1, 
+                 aes(x= GINI, y= Redistribution, colour=as.factor(wave+2000))) +
+  geom_point(size = 2, alpha = .8) + 
+  stat_smooth(size = 1, method = "lm", se = FALSE, colour="black") +
+  facet_wrap(~Country, ncol=3) +
+  labs(x = "Inequality", y =  "Redistributive Preference") + 
+  scale_color_grey(start=0.8, end=0.2, name="Wave") +  
+  scale_y_continuous( "Redistributive Preference", limits = c(4.2,6.7), 
+                      breaks = c(4.5,5,5.5,6,6.5)) +
+  scale_x_continuous("Inequality",
+                     breaks = c(35,40,45,50,55,60)) +  
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="bottom",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+figure64
+ggsave("Graphs/Figure64.png", plot=figure64, height = 10, width = 10, units="in")
+
+#6.5#Economic Development: Relationship "between" countries
+figure65 = ggplot(between, 
+                  aes(x= GDP_Mean, y= Redistribution, label=Group.1)) +
+  geom_point() + 
+  geom_smooth(method = "lm", colour="black") +
+  geom_text(aes(label=Group.1),hjust=-0.1, vjust=-0.5, size=3.5) +
+  labs(x = "Economic Development", y = "Redistributive Preference", fill="") +
+  scale_y_continuous("Redistributive Preference", limits = c(4.8,6.2), 
+                     breaks = c(4.8,5.2,5.6,6)) +
+  scale_x_continuous("Economic Development", limits = c(1,14),
+                     breaks = c(5,10,15)) +  
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="none",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+figure65
+ggsave("Graphs/Figure65.png")
+
+#6.6#Economic Development: Relationship "within" countries
+figure66= ggplot(lapop_country_Year1, 
+                 aes(x= GDP, y= Redistribution, colour=as.factor(wave+2000))) +
+  geom_point(size = 2, alpha = .8) + 
+  stat_smooth(size = 1, method = "lm", se = FALSE, colour="black") +
+  facet_wrap(~Country, ncol=3) +
+  labs(x = "Economic Development", y =  "Redistributive Preference") + 
+  scale_color_grey(start=0.8, end=0.2, name="Wave") +  
+  scale_y_continuous( "Redistributive Preference", limits = c(4.2,6.7), 
+                      breaks = c(4.5,5,5.5,6,6.5)) +
+  scale_x_continuous("Economic Development",
+                     breaks = c(0,5,10,15,20)) +  
+  theme(panel.grid.major = element_line(colour = "grey"),
+        legend.position="bottom",
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=12),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12),
+        legend.key.size=unit(1,"cm"),
+        panel.background = element_rect(fill = "white"))
+figure66
+ggsave("Graphs/Figure66.png", plot=figure66, height = 10, width = 10, units="in")
+```
+
+
++ Income and political ideology
+
+```{r Income and political ideology, eval=FALSE}
+
+#LINEAL
+
+model_wpol = lme4::lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Left + SystemConfidence + Employment + Education 
+                + Urban + Income*Left + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+#FACTOR
+
+model_wpola = lme4::lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Income_Decile*Political + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+screenreg(list(model_wpol, model_wpola), stars = c(0.01,0.05,0.1))
+
+plot_model(model_wpola, type = "int")
+plot_model(model_wpola, type = "re")
+
+plot_summs(model_wpol, model_wpola, colors = "CUD Bright", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+
+plot2a= plot_summs(model_wpol, colors = "red", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+plot2b=plot_summs(model_wpola, colors = "blue", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+
+ggsave("Graphs/Plot2a.png", plot=plot2a, height = 5, units="in")
+ggsave("Graphs/Plot2b.png", plot=plot2b, height = 5, units="in")
+
+```
+
++ Income and education
+
+```{r Income and education, eval=FALSE}
+
+#LINEAL
+
+model_wedu = lme4::lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Left + SystemConfidence + Employment + Education 
+                + Urban + Income*Education + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+#FACTOR
+
+model_wedua = lme4::lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Income_Decile*Education + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+screenreg(list(model_wpol, model_wpola), stars = c(0.01,0.05,0.1))
+
+plot_summs(model_wpol, model_wpola, colors = "CUD Bright", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+
+plot3a= plot_summs(model_wedu, colors = "red", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+plot3b= plot_summs(model_wedua, colors = "blue", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+
+ggsave("Graphs/Plot3a.png", plot=plot3a, height = 5, units="in")
+ggsave("Graphs/Plot3b.png", plot=plot3b, height = 5, units="in")
+
+```
+
++ Income and system confidence
+
+```{r Income and system confidence, eval=FALSE}
+
+lapop9=lapop
+lapop9$Income_Decile <- C(lapop9$Income_Decile, contr.treatment, base=10)
+
+#LINEAL
+
+model_wsys = lme4::lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Income*SystemConfidence + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+
+#FACTOR
+
+model_wsysa = lme4::lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+                + Political + SystemConfidence + Employment + Education 
+                + Urban + Income_Decile*SystemConfidence + Year + (1 | CountryWave) + (1 | Country), data=lapop9, weights=wt)
+
+screenreg(list(model_wsys, model_wsysa), stars = c(0.01,0.05,0.1))
+
+plot4a= plot_summs(model_wsys, model_wsysa, colors = "Set1", facet.rows = 4, facet.cols = TRUE, facet.label.pos = "bottom", omit.coefs = c("(Intercept)", "Year2014", "Year2016", "Year2018")) 
+
+ggsave("Graphs/Plot4a.png", plot=plot4a, height = 5, units="in")
+
+
+```
+
