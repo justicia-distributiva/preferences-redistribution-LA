@@ -1,4 +1,0 @@
-"0","load(""Input/2008-2018 LAPOP AL.RData"")
-"
-"2","Error in readChar(con, 5L, useBytes = TRUE) : cannot open the connection
-"

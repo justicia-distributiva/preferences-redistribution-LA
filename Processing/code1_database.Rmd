@@ -1,7 +1,8 @@
 ---
-title: 'Code Document: Redistributive preferences in unequal contexts'
+title: "Preferences for redistribution in unequal contexts: Changes in Latin America between 2008 and 2018"
+subtitle: "Database processing"
 author: "Gonzalo Franetovic - Juan Carlos Castillo"
-date: "18-11-2018"
+date: "04-10-2021"
 output:
   html_document: default
   pdf_document: default
@@ -10,70 +11,62 @@ output:
 
 The research code document is detailed below. The adjustment of the databases, cleaning and recoding of variables, estimation of models, tables and graphic figures are explained step by step. Other analyzes available in the document "Code annex".
 
-+ Install work packages
++ Packages
 
 ```{r Packages, message=FALSE, warning=FALSE, include=FALSE}
-
-#Detach previous packages
-lapply(names(sessionInfo()$loadedOnly), require, character.only = TRUE)
-invisible(lapply(paste0('package:', names(sessionInfo()$otherPkgs)), detach, character.only=TRUE, unload=TRUE, force=TRUE))
-
-#Install and load packages
 #install.packages("pacman")
-library(pacman)
-# p_load(tidyverse, car, stargazer, haven, foreign, xtable, psych, psy, magrittr, texreg, countrycode, extrafont, data.table, labelled, descr, wbstats, zoo, Hmisc, sjmisc)
-p_load(tidyverse)
-
-
+pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc)
 ```
+
+# Individual level variables
 
 + Full LAPOP 2008-2018 database paid for by the Institute of Political Science of the Pontificia Universidad Católica de Chile (incorporates information omitted in the free version)
 
-```{r Database Lapop Full,  echo=TRUE, message=FALSE, warning=FALSE}
-#Directory and databases
+```{r Database Lapop Full, echo=TRUE, message=FALSE, warning=FALSE}
+#Load database
+rm(list = ls())
+load("Input/original/2008-2018_LAPOP_AL.RData")
+```
 
-# lapop1 <- read_dta("2004-2018 LAPOP AmericasBarometer Merge (v1.0w).dta")
-# save(lapop1, file = "2004-2018 LAPOP.RData")
-# lapop2 = lapop1 %>% 
-#   filter(wave>=2008)
-
-load("Input/2008-2018 LAPOP AL.RData")
-load("Input/2008-2018 LAPOP AL.RData")
-
-lapop=as.data.frame(lapop) #Transformation to Data Frame
-names(lapop)= tolower(names(lapop)) #Name of the variables in minuscule
+```{r Database Lapop Selection, echo=TRUE, message=FALSE, warning=FALSE}
+#lapop = as.data.frame(lapop) #Transformation to Data Frame
+names(lapop) = tolower(names(lapop)) #Variable names in lower case
 
 #Name of the variables
-lapop1 = lapop %>%
+lapop = lapop %>%
   select(pais, wave, weight1500, wt, ros4, q1, q2, q11, q11n,
          l1, ocup4a, colocup4a, ed, q10, q10new_12, q10new_14, q10new_16, q10new_18,
          ur, tamano, b12, b18, b31, b21a, b13, b21,
          q12, q12c)
 
-colnames(lapop) <- c("country", "year", "weight1500", "wt", "redistribution", "man", "age", "married1", "married2",
-                     "ideology", "employment1", "employment2", "education", "income0810", "income12", "income14", "income16", "income18", 
-                     "zone", "sizecity", "ffaaconfidence", "policeconfidence", "judicialconfidence", "executiveconfidence", "congressconfidence", "polpartiesconfidence", 
-                     "children", "housesize")
-
-
+colnames(lapop) = c("country", "year", "weight1500", "wt", "redistribution",
+                    "man", "age", "married1", "married2",
+                    "ideology", "employment1", "employment2", "education", 
+                    "income0810", "income12", "income14", "income16", "income18",
+                    "zone", "sizecity",
+                    "ffaaconfidence", "policeconfidence", "judicialconfidence",
+                    "executiveconfidence", "congressconfidence", "polpartiesconfidence",
+                    "children", "housesize")
 ```
 
 + Selection and identification of the countries and waves of the sample
 
 ```{r Sample of countries and waves, echo=TRUE, message=FALSE, warning=FALSE}
 #Remove countries that we will not consider in the sample
-lapop$country <- as.numeric(lapop$country)
 lapop = lapop %>% 
+  mutate(country = as.numeric(country)) %>% 
   filter(country<=21) %>% 
   mutate(country = ifelse(country==21, 18, country))
 
 #Countries of the sample (Labels)
-lapop$country <- factor(lapop$country,
+lapop$country = factor(lapop$country,
   levels = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18),
-  labels = c("MEX", "GTM", "SLV", "HND", "NIC", "CRI", "PAN", "COL", "ECU", "BOL", "PER", "PRY", "CHL", "URY", "BRA", "VEN", "ARG", "DOM"))
+  labels = c("MEX", "GTM", "SLV", "HND", "NIC", "CRI", 
+             "PAN", "COL", "ECU", "BOL", "PER", "PRY", 
+             "CHL", "URY", "BRA", "VEN", "ARG", "DOM"))
 
-lapop$countryname <- countrycode(lapop$country,'iso3c','country.name')
-lapop$countryname_es <- countrycode(lapop$country,'iso3c','un.name.es')
+lapop$countryname = countrycode(lapop$country,"iso3c","country.name")
+lapop$countryname_es = countrycode(lapop$country,"iso3c","un.name.es")
 
 #Remove waves that we will not consider in the sample
 lapop = lapop %>% 
@@ -83,13 +76,11 @@ describe(lapop$country)
 describe(lapop$year)
 describe(lapop$countryname)
 describe(lapop$countryname_es)
-
 ```
 
 + Adjustment of different variables between years
 
-```{r Database Lapop Full,  echo=TRUE, message=FALSE, warning=FALSE}
-
+```{r Adjustment of different variables between years, echo=TRUE, message=FALSE, warning=FALSE}
 #Adjustment of different variables between years
 
 #Employment
@@ -107,90 +98,87 @@ lapop = lapop %>%
 
 lapop = lapop %>% 
   select(-c(married1, married2))
-
-
 ```
 
-+ Individual level variables
++ Generation of individual level variables
 
-```{r Individual level variables, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Generation of individual level variables, echo=TRUE, message=FALSE, warning=FALSE}
 #Waves
-lapop$wave <- lapop$year
+lapop$wave = lapop$year
 lapop$wave = as.factor(lapop$wave)
 
 #Country_year
-lapop$country_wave <- do.call(paste, c(lapop[c("country", "wave")], sep = "_"))
+lapop$country_wave = do.call(paste, c(lapop[c("country", "wave")], sep = "_"))
 
 #Preference for redistribution
 #Dummy
-lapop$redistribution_r <-as.numeric(lapop$redistribution >= 7)
-lapop$redistribution_r <-as.factor(lapop$redistribution_r)
+lapop$redistribution_r = as.numeric(lapop$redistribution >= 7)
+lapop$redistribution_r = as.factor(lapop$redistribution_r)
 #Log Natural
-lapop$redistribution_ln <- log(lapop$redistribution)
+lapop$redistribution_ln = log(lapop$redistribution)
 
 #Man
-lapop$man <-as.numeric(lapop$man <= 1)
-lapop$man_f <-factor(lapop$man, levels = c(0,1), labels = c("Woman", "Man"))
+lapop$man = as.numeric(lapop$man <= 1)
+lapop$man_f = factor(lapop$man, levels = c(0,1), labels = c("Woman", "Man"))
 
 #Age
-lapop$age[lapop$age<=17] <- NA #Continue Variable
-lapop$age2 <- (lapop$age)^2 #Quadratic Variable
+lapop$age[lapop$age<=17] = NA #Continue Variable
+lapop$age2 = (lapop$age)^2 #Quadratic Variable
 
 #Married (or cohabiting)
-lapop$married <-as.factor(lapop$married)
+lapop$married = as.factor(lapop$married)
 lapop = lapop %>% 
   mutate(married_f = recode(married,"2=1; 3=1; 7=1; 1=0; 4=0; 5=0; 6=0"))
-lapop$married_f <-factor(lapop$married_f, levels = c(0,1), labels = c("Single", "Married"))
+lapop$married_f = factor(lapop$married_f, levels = c(0,1), labels = c("Single", "Married"))
 
 #Left political ideology
 #Continue Variable
-lapop$left <- 1+10-(lapop$ideology)
+lapop$left = 1+10-(lapop$ideology)
 #Factor Variable
 lapop = lapop %>% 
   mutate(ideology_f = recode(left,"1:4=1; 5:6=2; 7:10=3"))
 lapop$ideology_f[is.na(lapop$ideology_f)] = 99
-lapop$ideology_f <-factor(lapop$ideology_f, levels = c(1,2,3, 99), labels = c("Right", "Center", "Left", "Not declared"))
+lapop$ideology_f = factor(lapop$ideology_f, levels = c(1,2,3, 99), labels = c("Right", "Center", "Left", "Not declared"))
 
 #Employment
 lapop = lapop %>% 
   mutate(employment_r = recode(employment,"4=1; 6=1; 3=2; 5=2; 7=2; 1:2=3"))
-lapop$employment_r <-factor(lapop$employment_r, levels = c(1,2,3), labels = c("No workforce", "Unemployed", "Employed"))
+lapop$employment_r = factor(lapop$employment_r, levels = c(1,2,3), labels = c("No workforce", "Unemployed", "Employed"))
 
 #Education
 lapop = lapop %>% 
   mutate(education_r = recode(education,"0:6=1; 7:12=2; 13:18=3"))
-lapop$education_r <-factor(lapop$education_r, levels = c(1,2,3), labels = c("Primary", "Secondary", "Tertiary"))
+lapop$education_r = factor(lapop$education_r, levels = c(1,2,3), labels = c("Primary", "Secondary", "Tertiary"))
 
 #Urban zone
-lapop$zone[lapop$zone==2] <- 0
-lapop$zone <-factor(lapop$zone, levels = c(0, 1), labels = c("Rural", "Urban"))
+lapop$zone[lapop$zone==2] = 0
+lapop$zone =factor(lapop$zone, levels = c(0, 1), labels = c("Rural", "Urban"))
 
 #City size
-lapop$tamano <- lapop$sizecity
-lapop$sizecity <- 1+5-(lapop$tamano)
-lapop$sizecity[lapop$sizecity<1] <- NA
-lapop$sizecity <-factor(lapop$sizecity, levels = c(1,2,3,4,5), labels = c("Rural area", "Small city", "Medium city", "Big city", "National capital"))
+lapop$tamano = lapop$sizecity
+lapop$sizecity = 1+5-(lapop$tamano)
+lapop$sizecity[lapop$sizecity<1] = NA
+lapop$sizecity = factor(lapop$sizecity, levels = c(1,2,3,4,5), labels = c("Rural area", "Small city", "Medium city", "Big city", "National capital"))
 
 #Political system confidence
-lapop$sysconf <- rowMeans(lapop[c("ffaaconfidence", "policeconfidence", "judicialconfidence", "executiveconfidence", "congressconfidence", "polpartiesconfidence")], na.rm=TRUE)
+lapop$sysconf = rowMeans(lapop[c("ffaaconfidence", "policeconfidence", "judicialconfidence", "executiveconfidence", "congressconfidence", "polpartiesconfidence")], na.rm=TRUE)
 
 #People in the home: the number of children in the household is taken as a proxy of the variable "people in the home" with a adjust of +1. This is used to estimate per capita income.
-lapop$nhome <- lapop$children+1
+lapop$nhome = lapop$children+1
+
+#Filter
+lapop = lapop %>% 
+  filter(year==2008 | year==2010 | year==2012 | year==2014 | year==2016 | year==2018)
 ```
 
-+Income
-
-```{r Quintiles and deciles by country_year, echo=TRUE, message=FALSE, warning=FALSE}
-
-lapop = filter(lapop, year==2008 | year==2010 | year==2012 | year==2014 | year==2016 | year==2018)
-
+```{r Income, echo=TRUE, message=FALSE, warning=FALSE}
 #Income
-lapop = lapop %>% 
-  mutate(income_ori = ifelse(year<=2010, income0810, NA)) %>% 
-  mutate(income_ori = ifelse(year==2012, income12, income_ori)) %>% 
-  mutate(income_ori = ifelse(year==2014, income14, income_ori)) %>% 
-  mutate(income_ori = ifelse(year==2016, income16, income_ori)) %>% 
-  mutate(income_ori = ifelse(year==2018, income18, income_ori))
+lapop = lapop %>%
+  mutate(income_ori = case_when(year<=2010 ~ income0810,
+                                year==2012 ~ income12,
+                                year==2014 ~ income14,
+                                year==2016 ~ income16,
+                                year==2018 ~ income18))
 
 #Missings
 lapop = lapop %>% 
@@ -202,22 +190,14 @@ lapop = lapop %>%
   mutate(decile=ntile(income_ori,10))
 
 lapop = lapop %>% 
-  mutate(income = ifelse(year>=2012, decile, income_ori)) %>% 
-  mutate(decile = income)
-
-#Check
-options(max.print=1000000)
-#table(lapop$income_ori, lapop$income, lapop$country_wave)
-
-#Transformation to Data Frame
-lapop=as.data.frame(lapop) 
-
+  mutate(income = ifelse(year>=2012, decile, income_ori),
+         decile = income)
 
 #Factors
 
 #Decile incorporating missing category
-lapop$decile_f <- lapop$decile
-lapop$decile_f <- as.factor(lapop$decile_f)
+lapop$decile_f = lapop$decile
+lapop$decile_f = as.factor(lapop$decile_f)
 
 #Dummies
 table(lapop$decile_d10)
@@ -225,26 +205,24 @@ table(lapop$decile_d10)
 #Decile 10 dummy with missing as reference
 lapop = lapop %>% 
   mutate(decile_d10 = recode(decile,"1:9=0; 10=1"))
-lapop$decile_d10 <-factor(lapop$decile_d10, levels = c(0,1), labels = c("Not decile 10", "Decile 10"))
+lapop$decile_d10 =factor(lapop$decile_d10, levels = c(0,1), labels = c("Not decile 10", "Decile 10"))
 describe(lapop$decile_d10)
 
 #Decile 1 dummy with missing as reference
 lapop = lapop %>% 
   mutate(decile_d1 = recode(decile,"2:10=0; 1=1"))
-lapop$decile_d1 <-factor(lapop$decile_d1, levels = c(0,1), labels = c("Not decile 1", "Decile 1"))
+lapop$decile_d1 =factor(lapop$decile_d1, levels = c(0,1), labels = c("Not decile 1", "Decile 1"))
 describe(lapop$decile_d1)
 
 #Cleaning database
 lapop = lapop %>% 
   select(-c(income0810, income12, income14, income16, income18, income_ori))
-
 ```
 
 + Missing values: Only variables with complete information
 
-```{r Missing data, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Missing values, echo=TRUE, message=FALSE, warning=FALSE}
 #Listwise with the variables used to estimate the models
-lapop1 = lapop
 lapop = lapop[complete.cases(lapop$redistribution, lapop$man_f, lapop$age, lapop$married_f, lapop$ideology_f, lapop$employment_r, lapop$education_r, lapop$income, lapop$zone, lapop$sysconf),]
 ```
 
@@ -252,57 +230,57 @@ lapop = lapop[complete.cases(lapop$redistribution, lapop$man_f, lapop$age, lapop
 
 ```{r Time dummy, echo=TRUE, message=FALSE, warning=FALSE}
 #2008
-lapop$year_2008 <- 0
-lapop$year_2008[lapop$year==2008] <- 1
+lapop$year_2008 = 0
+lapop$year_2008[lapop$year==2008] = 1
 #2008
-lapop$year_2010 <- 0
-lapop$year_2010[lapop$year==2010] <- 1
+lapop$year_2010 = 0
+lapop$year_2010[lapop$year==2010] = 1
 #2008
-lapop$year_2012 <- 0
-lapop$year_2012[lapop$year==2012] <- 1
+lapop$year_2012 = 0
+lapop$year_2012[lapop$year==2012] = 1
 #2008
-lapop$year_2014 <- 0
-lapop$year_2014[lapop$year==2014] <- 1
+lapop$year_2014 = 0
+lapop$year_2014[lapop$year==2014] = 1
 #2008
-lapop$year_2016 <- 0
-lapop$year_2016[lapop$year==2016] <- 1
+lapop$year_2016 = 0
+lapop$year_2016[lapop$year==2016] = 1
 #2008
-lapop$year_2018 <- 0
-lapop$year_2018[lapop$year==2018] <- 1
+lapop$year_2018 = 0
+lapop$year_2018[lapop$year==2018] = 1
 ```
 
-+ Country Level variables 
+# Country level variables 
 
 ```{r Country level variables, echo=TRUE, message=FALSE, warning=FALSE}
-
-paises<- c("ARG",
-           "BOL",
-           "BRA",
-           "CHL",
-           "COL",
-           "CRI",
-           "DOM",
-           "ECU",
-           "GTM",
-           "HND",
-           "MEX",
-           "NIC",
-           "PAN",
-           "PER",
-           "PRY",
-           "SLV",
-           "URY",
-           "VEN")
+#Countries
+countries = c("ARG",
+              "BOL",
+              "BRA",
+              "CHL",
+              "COL",
+              "CRI",
+              "DOM",
+              "ECU",
+              "GTM",
+              "HND",
+              "MEX",
+              "NIC",
+              "PAN",
+              "PER",
+              "PRY",
+              "SLV",
+              "URY",
+              "VEN")
 
 
 #GINI
-for (i in 1:length(paises)) {
-  name<-paste0("gini_", paises[i])
-  pais<- paste0(paises[i])
+for (i in 1:length(countries)) {
+  name=paste0("gini_", countries[i])
+  pais= paste0(countries[i])
   assign(name, wb(indicator = "SI.POV.GINI", country = pais, startdate = 2005, enddate = 2019))
 }
 
-gini<- rbind(gini_ARG,
+gini= rbind(gini_ARG,
              gini_BOL,
              gini_BRA,
              gini_CHL,
@@ -321,21 +299,21 @@ gini<- rbind(gini_ARG,
              gini_URY,
              gini_VEN)
 
-gini$id<- NA
-gini$id<- paste0(gini$iso3c,"_",gini$date)
-gini<- gini[,c(8,1,2,3,4,5,6,7)]
-gini<- gini[,c(1,4)]
-names(gini)[2]<- "gini"
+gini$id= NA
+gini$id= paste0(gini$iso3c,"_",gini$date)
+gini= gini[,c(8,1,2,3,4,5,6,7)]
+gini= gini[,c(1,4)]
+names(gini)[2]= "gini"
 
 
-#GDP
-for (i in 1:length(paises)) {
-  name<-paste0("gdp_", paises[i])
-  pais<- paste0(paises[i])
+#GDP per capita
+for (i in 1:length(countries)) {
+  name=paste0("gdp_", countries[i])
+  pais= paste0(countries[i])
   assign(name, wb(indicator = "NY.GDP.PCAP.KD", country = pais, startdate = 2005, enddate = 2019))
 }
 
-gdp<- rbind(gdp_ARG,
+gdp= rbind(gdp_ARG,
              gdp_BOL,
              gdp_BRA,
              gdp_CHL,
@@ -355,13 +333,13 @@ gdp<- rbind(gdp_ARG,
              gdp_VEN)
 
 
-gdp$id<- NA
-gdp$id<- paste0(gdp$iso3c,"_",gdp$date)
-gdp<- gdp[,c(8,1,2,3,4,5,6,7)]
-gdp<- gdp[,c(1,4)]
-names(gdp)[2]<- "gdp"
+gdp$id= NA
+gdp$id= paste0(gdp$iso3c,"_",gdp$date)
+gdp= gdp[,c(8,1,2,3,4,5,6,7)]
+gdp= gdp[,c(1,4)]
+names(gdp)[2]= "gdp"
 
-#Miles de dolares
+#Thousands of dollars
 gdp$gdp = (gdp$gdp)/1000
 
 ```
@@ -369,47 +347,47 @@ gdp$gdp = (gdp$gdp)/1000
 + Imputations
 
 ```{r Country level variables imputation, echo=TRUE, message=FALSE, warning=FALSE}
+#Fusion of country variables databases
+country_vars = full_join(gini, gdp) %>% 
+  arrange(desc(id))
 
-#Fusion databases
-
-country_vars <- merge(gini, gdp, by="id", all=T)
-
+#Original databases
 country_vars_original = country_vars
-#lapop_original = lapop
+lapop_original = lapop
 
-#Reasignación de datos en missings
-country_vars$gini[country_vars$id=="ARG_2018"] <- country_vars$gini[country_vars$id=="ARG_2017"]
-country_vars$gini[country_vars$id=="BOL_2010"] <- country_vars$gini[country_vars$id=="BOL_2009"]
-country_vars$gini[country_vars$id=="BOL_2018"] <- country_vars$gini[country_vars$id=="BOL_2017"]
-country_vars$gini[country_vars$id=="BRA_2010"] <- country_vars$gini[country_vars$id=="BRA_2009"]
-country_vars$gini[country_vars$id=="BRA_2018"] <- country_vars$gini[country_vars$id=="BRA_2017"]
-country_vars$gini[country_vars$id=="CHL_2008"] <- country_vars$gini[country_vars$id=="CHL_2009"]
-country_vars$gini[country_vars$id=="CHL_2010"] <- country_vars$gini[country_vars$id=="CHL_2009"]
-country_vars$gini[country_vars$id=="CHL_2012"] <- country_vars$gini[country_vars$id=="CHL_2011"]
-country_vars$gini[country_vars$id=="CHL_2014"] <- country_vars$gini[country_vars$id=="CHL_2013"]
-country_vars$gini[country_vars$id=="CHL_2016"] <- country_vars$gini[country_vars$id=="CHL_2015"]
-country_vars$gini[country_vars$id=="CHL_2018"] <- country_vars$gini[country_vars$id=="CHL_2017"]
-country_vars$gini[country_vars$id=="COL_2018"] <- country_vars$gini[country_vars$id=="COL_2017"]
-country_vars$gini[country_vars$id=="CRI_2018"] <- country_vars$gini[country_vars$id=="CRI_2017"]
-country_vars$gini[country_vars$id=="DOM_2018"] <- country_vars$gini[country_vars$id=="DOM_2016"] #DOM_2018
-country_vars$gini[country_vars$id=="ECU_2018"] <- country_vars$gini[country_vars$id=="ECU_2017"]
-country_vars$gini[country_vars$id=="HND_2018"] <- country_vars$gini[country_vars$id=="HND_2017"]
-country_vars$gini[country_vars$id=="MEX_2018"] <- country_vars$gini[country_vars$id=="MEX_2016"] #MEX_2018
-country_vars$gini[country_vars$id=="PAN_2018"] <- country_vars$gini[country_vars$id=="PAN_2017"]
-country_vars$gini[country_vars$id=="PER_2018"] <- country_vars$gini[country_vars$id=="PER_2017"]
-country_vars$gini[country_vars$id=="PRY_2018"] <- country_vars$gini[country_vars$id=="PRY_2017"]
-country_vars$gini[country_vars$id=="SLV_2018"] <- country_vars$gini[country_vars$id=="SLV_2017"]
-country_vars$gini[country_vars$id=="URY_2018"] <- country_vars$gini[country_vars$id=="URY_2017"]
+#Reallocation of data in missings
+country_vars$gini[country_vars$id=="ARG_2018"] = country_vars$gini[country_vars$id=="ARG_2017"]
+country_vars$gini[country_vars$id=="BOL_2010"] = country_vars$gini[country_vars$id=="BOL_2009"]
+country_vars$gini[country_vars$id=="BOL_2018"] = country_vars$gini[country_vars$id=="BOL_2017"]
+country_vars$gini[country_vars$id=="BRA_2010"] = country_vars$gini[country_vars$id=="BRA_2009"]
+country_vars$gini[country_vars$id=="BRA_2018"] = country_vars$gini[country_vars$id=="BRA_2017"]
+country_vars$gini[country_vars$id=="CHL_2008"] = country_vars$gini[country_vars$id=="CHL_2009"]
+country_vars$gini[country_vars$id=="CHL_2010"] = country_vars$gini[country_vars$id=="CHL_2009"]
+country_vars$gini[country_vars$id=="CHL_2012"] = country_vars$gini[country_vars$id=="CHL_2011"]
+country_vars$gini[country_vars$id=="CHL_2014"] = country_vars$gini[country_vars$id=="CHL_2013"]
+country_vars$gini[country_vars$id=="CHL_2016"] = country_vars$gini[country_vars$id=="CHL_2015"]
+country_vars$gini[country_vars$id=="CHL_2018"] = country_vars$gini[country_vars$id=="CHL_2017"]
+country_vars$gini[country_vars$id=="COL_2018"] = country_vars$gini[country_vars$id=="COL_2017"]
+country_vars$gini[country_vars$id=="CRI_2018"] = country_vars$gini[country_vars$id=="CRI_2017"]
+country_vars$gini[country_vars$id=="DOM_2018"] = country_vars$gini[country_vars$id=="DOM_2016"] #DOM_2018
+country_vars$gini[country_vars$id=="ECU_2018"] = country_vars$gini[country_vars$id=="ECU_2017"]
+country_vars$gini[country_vars$id=="HND_2018"] = country_vars$gini[country_vars$id=="HND_2017"]
+country_vars$gini[country_vars$id=="MEX_2018"] = country_vars$gini[country_vars$id=="MEX_2016"] #MEX_2018
+country_vars$gini[country_vars$id=="PAN_2018"] = country_vars$gini[country_vars$id=="PAN_2017"]
+country_vars$gini[country_vars$id=="PER_2018"] = country_vars$gini[country_vars$id=="PER_2017"]
+country_vars$gini[country_vars$id=="PRY_2018"] = country_vars$gini[country_vars$id=="PRY_2017"]
+country_vars$gini[country_vars$id=="SLV_2018"] = country_vars$gini[country_vars$id=="SLV_2017"]
+country_vars$gini[country_vars$id=="URY_2018"] = country_vars$gini[country_vars$id=="URY_2017"]
 
 #ECLAC
-country_vars$gini[country_vars$id=="GTM_2006"] <- 55.8
-country_vars$gini[country_vars$id=="GTM_2014"] <- 53.5
-country_vars$gini[country_vars$id=="NIC_2009"] <- 46.3
-country_vars$gini[country_vars$id=="NIC_2014"] <- 49.5
-country_vars$gini[country_vars$id=="VEN_2008"] <- 37.9
-country_vars$gini[country_vars$id=="VEN_2010"] <- 36.4
-country_vars$gini[country_vars$id=="VEN_2012"] <- 38.4
-country_vars$gini[country_vars$id=="VEN_2014"] <- 37.8
+country_vars$gini[country_vars$id=="GTM_2006"] = 55.8
+country_vars$gini[country_vars$id=="GTM_2014"] = 53.5
+country_vars$gini[country_vars$id=="NIC_2009"] = 46.3
+country_vars$gini[country_vars$id=="NIC_2014"] = 49.5
+country_vars$gini[country_vars$id=="VEN_2008"] = 37.9
+country_vars$gini[country_vars$id=="VEN_2010"] = 36.4
+country_vars$gini[country_vars$id=="VEN_2012"] = 38.4
+country_vars$gini[country_vars$id=="VEN_2014"] = 37.8
 
 #Linear interpolation
 country_vars$country_wave1 = country_vars$id
@@ -437,74 +415,76 @@ country_vars_else = country_vars1 %>%
   filter(country!="NIC") %>% 
   filter(country!="VEN") 
 
-
-country_vars = as.data.frame(rbind(country_vars_else, country_vars_GTM, country_vars_NIC, country_vars_VEN)) %>%
+country_vars = rbind(country_vars_else, country_vars_GTM, country_vars_NIC, country_vars_VEN) %>%
   rename(country_wave = id) %>% 
   mutate(year = as.numeric(year)) %>% 
-  arrange(country)
+  arrange(desc(country_wave))
 
 rm(list=setdiff(ls(), c("lapop", "country_vars", "lapop_original", "country_vars_original", "gini", "gdp")))
 ```
 
 ```{r Country level variables, echo=TRUE, message=FALSE, warning=FALSE}
-
 #Waves
 country_vars_waves = filter(country_vars, year==2008 | year==2010 | year==2012 | year==2014 | year==2016 | year==2018)
 
 #Means
-country_var_means = aggregate(country_vars_waves[, 2:3], list(country_vars_waves$country), mean)
-colnames(country_var_means) = c("country", "gini_mean", "gdp_mean")
-country_vars_waves <- merge(country_vars_waves, country_var_means, by="country", all.x = TRUE, all.y = FALSE)
+country_vars_waves = country_vars_waves %>% 
+  group_by(country) %>% 
+  mutate(gini_mean = mean(gini, na.rm = T),
+         gdp_mean = mean(gdp, na.rm = T)) %>% 
+  ungroup()
 
 #Differences
-country_vars_waves$gini_dif = country_vars_waves$gini - country_vars_waves$gini_mean
-country_vars_waves$gdp_dif = country_vars_waves$gdp - country_vars_waves$gdp_mean
+country_vars_waves = country_vars_waves %>% 
+  mutate(gini_dif = gini - gini_mean,
+         gdp_dif = gdp - gdp_mean)
 
 #Welfare state
 country_vars_waves = country_vars_waves %>% 
-  mutate(welfare = ifelse(country == "BRA" | country == "CRI" | country == "PAN" | country == "MEX" | country == "URY", "Proteccionista", NA)) %>% 
-  mutate(welfare = ifelse(country == "ARG" | country == "CHL", "Productivista", welfare)) %>% 
-  mutate(welfare = ifelse(country == "ECU" | country == "SLV" | country == "GTM" | country == "COL" | country == "VEN" | country == "PER" | country == "DOM" | country == "HND" | country == "NIC" | country == "BOL" | country == "PRY", "Informal familiar", welfare))
+  mutate(welfare = case_when(
+    (country == "BRA" | country == "CRI" | country == "PAN" | country == "MEX" | country == "URY") ~ "Proteccionist",
+    (country == "ARG" | country == "CHL") ~ "Productivist",
+    TRUE ~"informal-familialist"))
 
-#Limpieza
-#rm(list=setdiff(ls(), c("lapop", "country_vars_waves", "lapop_original", "country_vars")))
 ```
 
+# Merge
+
 ```{r Merge individual and country variables, echo=TRUE, message=FALSE, warning=FALSE}
+#Merge Level-1 & Lvele-2 variables
+country_vars_waves = country_vars_waves %>% 
+  select(country, year, country_wave, gini, gdp, 
+         gini_mean, gdp_mean, gini_dif, gdp_dif, welfare)
 
-#Merge N1 & N2
-lapop_ori=lapop
-lapop <- left_join(lapop, country_vars_waves[ , c("country_wave", "gini", "gdp", "gini_mean", "gdp_mean", "gini_dif", "gdp_dif", "welfare")],
-                by="country_wave")
+lapop = lapop %>%
+  left_join(country_vars_waves)
 
-#Sólo casos con variables N2
-lapop$filtro=1
-lapop$filtro[is.na(lapop$gini)] = 0
-lapop = filter(lapop, filtro==1)
-
-lapop$country = factor(lapop$country)
+#Only cases with Level-2 variables
+lapop = lapop %>% 
+  filter_at(vars(gini:welfare), all_vars(!is.na(.)))
 
 #Generate year_rec & country_wave_rec
 lapop = lapop %>% 
-  mutate(year_rec = ifelse(year == 2008, "08", NA)) %>%
-  mutate(year_rec = ifelse(year == 2010, "10", year_rec)) %>%
-  mutate(year_rec = ifelse(year == 2012, "12", year_rec)) %>% 
-  mutate(year_rec = ifelse(year == 2014, "14", year_rec)) %>% 
-  mutate(year_rec = ifelse(year == 2016, "16", year_rec)) %>% 
-  mutate(year_rec = ifelse(year == 2018, "18", year_rec))
+  mutate(year_rec = case_when(year == 2008 ~ "08",
+                              year == 2010 ~ "10",
+                              year == 2012 ~ "12",
+                              year == 2014 ~ "14",
+                              year == 2016 ~ "16",
+                              year == 2018 ~ "18"),
+         country_wave_rec = paste0(country, sep ="_", year_rec))
 
-lapop$country_wave_rec = paste0(lapop$country,sep="_",lapop$year_rec)
-
-#Factor year
-lapop$year = as.factor(lapop$year)
+#Country and year as factor
+lapop = lapop %>% 
+  mutate(country = as.factor(country),
+         year = as.factor(year))
 ```
 
-+ Databases paper
+# Final database
 
 ```{r Save and Load Databases, echo=TRUE, message=FALSE, warning=FALSE}
 #Save Databases paper
-# save(n2, file = "Databases/Databases_paper/n2.RData")
 rm(list=setdiff(ls(), c("lapop", "country_vars_waves")))
 
-save.image(file = "Output/lapop_final.RData") #Merge Data level 1 and level 2®
+#Save final database
+save.image(file = "Input/proc/LAPOP_Final.RData") 
 ```
