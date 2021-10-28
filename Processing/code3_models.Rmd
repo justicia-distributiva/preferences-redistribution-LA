@@ -226,7 +226,7 @@ figure_7a = plot(int_inc_ine,
   scale_colour_grey(start=0.6, end=0.1, name="GINI [WE]", labels = c("Max decrease", "Max increase"))
 
 figure_7a
-ggsave("../Output/Graphs/Figure7a.png", plot=figure_7a, height = 5, units="in")
+ggsave("../Output/Graphs/Figure7a.png", plot=figure_7a, height = 4, units="in")
 
 #GDP [BE]
 int_inc_dev = ggpredict(model_6, terms = c("Income", "GDP_Mean [1.65, 13.98]"))
@@ -245,7 +245,7 @@ figure_7b = plot(int_inc_dev,
   scale_colour_grey(start=0.6, end=0.1, name="GDP [BE]", labels = c("Low", "High"))
 
 figure_7b
-ggsave("../Output/Graphs/Figure7b.png", plot=figure_7b, height = 5, units="in")
+ggsave("../Output/Graphs/Figure7b.png", plot=figure_7b, height = 4, units="in")
 
 ```
 
