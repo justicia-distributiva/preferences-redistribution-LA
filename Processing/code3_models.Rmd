@@ -24,7 +24,7 @@ pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot,
 
 #Load database
 rm(list = ls())
-load("../Output/LAPOP_Final.RData")
+load("Input/proc/LAPOP_Final.RData")
 
 #Rename variables
 lapop = lapop %>% 
@@ -180,7 +180,7 @@ figure_6a = figure_6[[2]] +
   geom_hline(yintercept = 0, linetype = "dashed")
 
 figure_6a
-ggsave("../Output/Graphs/Figure6.png", plot=figure_6a, height = 5, units="in")
+ggsave("Output/Graphs/Figure6.png", plot=figure_6a, height = 5, units="in")
 
 ranef(model_6)
 
