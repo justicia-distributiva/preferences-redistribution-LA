@@ -24,7 +24,7 @@ pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot,
 
 #Load database
 rm(list = ls())
-load("Output/LAPOP_Final.RData")
+load("../Output/LAPOP_Final.RData")
 
 #Rename variables
 lapop = lapop %>% 
@@ -70,7 +70,7 @@ inf.m0 = influence(model_0_ven, "Country")
 #Cook D
 cooks.distance(inf.m0, parameter=1, sort=TRUE)
 
-jpeg("Output/Graphs/CookD.jpg", width=600, height=400)
+jpeg("../Output/Graphs/CookD.jpg", width=600, height=400)
 
 plot(inf.m0, which="cook",
 cutoff=.17, sort=TRUE,
@@ -180,7 +180,7 @@ figure_6a = figure_6[[2]] +
   geom_hline(yintercept = 0, linetype = "dashed")
 
 figure_6a
-ggsave("Output/Graphs/Figure6.png", plot=figure_6a, height = 5, units="in")
+ggsave("../Output/Graphs/Figure6.png", plot=figure_6a, height = 5, units="in")
 
 ranef(model_6)
 
@@ -226,7 +226,7 @@ figure_7a = plot(int_inc_ine,
   scale_colour_grey(start=0.6, end=0.1, name="GINI [WE]", labels = c("Max decrease", "Max increase"))
 
 figure_7a
-ggsave("Output/Graphs/Figure7a.png", plot=figure_7a, height = 5, units="in")
+ggsave("../Output/Graphs/Figure7a.png", plot=figure_7a, height = 5, units="in")
 
 #GDP [BE]
 int_inc_dev = ggpredict(model_6, terms = c("Income", "GDP_Mean [1.65, 13.98]"))
@@ -245,7 +245,7 @@ figure_7b = plot(int_inc_dev,
   scale_colour_grey(start=0.6, end=0.1, name="GDP [BE]", labels = c("Low", "High"))
 
 figure_7b
-ggsave("Output/Graphs/Figure7b.png", plot=figure_7b, height = 5, units="in")
+ggsave("../Output/Graphs/Figure7b.png", plot=figure_7b, height = 5, units="in")
 
 ```
 
@@ -433,7 +433,7 @@ appendix3 = ggplot(redis_country_year, aes(variable, value))+
 
 appendix3
 
-ggsave("Output/Graphs/Appendix3.png", plot=appendix3, height = 10, width = 9, units="in")
+ggsave("../Output/Graphs/Appendix3.png", plot=appendix3, height = 10, width = 9, units="in")
 ```
 
 + Appendix 4 - Hybrid multilevel regression models of individual preference for redistribution. Continuous,categorical and quadratic income measures.
@@ -500,8 +500,8 @@ extra1= ggplot(between,
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
   geom_text(aes(label=country),hjust=-0.1, vjust=-0.5, size=3.5) +
-  labs(x = "Inequality", y = "Redistributive Preference", fill="") +
-  scale_y_continuous("Redistributive Preference", limits = c(4.8,6.2), 
+  labs(x = "Inequality", y = "Preference for redistribution", fill="") +
+  scale_y_continuous("Preference for redistribution", limits = c(4.8,6.2), 
                      breaks = c(4.8,5.2,5.6,6)) +
   scale_x_continuous("Inequality", limits = c(40,60),
                      breaks = c(40,50,60)) +    
@@ -514,7 +514,7 @@ extra1= ggplot(between,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra1
-ggsave("Output/Graphs/Extra1.png", plot=extra1)
+ggsave("../Output/Graphs/Extra1.png", plot=extra1)
 
 #Inequality: Relation "within" countries
 extra2= ggplot(within, 
@@ -522,9 +522,9 @@ extra2= ggplot(within,
   geom_point(size = 2, alpha = .8) + 
   stat_smooth(size = 1, method = "lm", se = FALSE, colour="black") +
   facet_wrap(~countryname1, ncol=3) +
-  labs(x = "Inequality", y =  "Redistributive Preference") + 
+  labs(x = "Inequality", y =  "Preference for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Redistributive Preference", limits = c(4.2,6.7), 
+  scale_y_continuous( "Preference for redistribution", limits = c(4.2,6.7), 
                       breaks = c(4.5,5,5.5,6,6.5)) +
   scale_x_continuous("Inequality",
                      breaks = c(35,40,45,50,55,60)) +  
@@ -537,7 +537,7 @@ extra2= ggplot(within,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra2
-ggsave("Output/Graphs/Extra2.png", plot=extra2, height = 10, width = 10, units="in")
+ggsave("../Output/Graphs/Extra2.png", plot=extra2, height = 10, width = 10, units="in")
 
 #Economic Development: Relation "between" countries
 extra3 = ggplot(between, 
@@ -545,8 +545,8 @@ extra3 = ggplot(between,
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
   geom_text(aes(label=country),hjust=-0.1, vjust=-0.5, size=3.5) +
-  labs(x = "Economic Development", y = "Redistributive Preference", fill="") +
-  scale_y_continuous("Redistributive Preference", limits = c(4.8,6.2), 
+  labs(x = "Economic Development", y = "Preference for redistribution", fill="") +
+  scale_y_continuous("Preference for redistribution", limits = c(4.8,6.2), 
                      breaks = c(4.8,5.2,5.6,6)) +
   scale_x_continuous("Economic Development", limits = c(1,14),
                      breaks = c(5,10,15)) +  
@@ -559,7 +559,7 @@ extra3 = ggplot(between,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra3
-ggsave("Output/Graphs/Extra3.png", plot=extra3)
+ggsave("../Output/Graphs/Extra3.png", plot=extra3)
 
 #Economic Development: Relation "within" countries
 extra4= ggplot(within, 
@@ -567,9 +567,9 @@ extra4= ggplot(within,
   geom_point(size = 2, alpha = .8) + 
   stat_smooth(size = 1, method = "lm", se = FALSE, colour="black") +
   facet_wrap(~countryname1, ncol=3) +
-  labs(x = "Economic Development", y =  "Redistributive Preference") + 
+  labs(x = "Economic Development", y =  "Preference for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Redistributive Preference", limits = c(4.2,6.7), 
+  scale_y_continuous( "Preference for redistribution", limits = c(4.2,6.7), 
                       breaks = c(4.5,5,5.5,6,6.5)) +
   scale_x_continuous("Economic Development",
                      breaks = c(0,5,10,15,20)) +  
@@ -582,7 +582,7 @@ extra4= ggplot(within,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra4
-ggsave("Output/Graphs/Extra4.png", plot=extra4, height = 10, width = 10, units="in")
+ggsave("../Output/Graphs/Extra4.png", plot=extra4, height = 10, width = 10, units="in")
 ```
 
 

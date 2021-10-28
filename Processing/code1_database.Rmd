@@ -25,7 +25,7 @@ pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc)
 ```{r Database Lapop Full, echo=TRUE, message=FALSE, warning=FALSE}
 #Load database
 rm(list = ls())
-load("Input/original/2008-2018_LAPOP_AL.RData")
+load("../Input/original/2008-2018_LAPOP_AL.RData")
 ```
 
 ```{r Database Lapop Selection, echo=TRUE, message=FALSE, warning=FALSE}
@@ -486,5 +486,5 @@ lapop = lapop %>%
 rm(list=setdiff(ls(), c("lapop", "country_vars_waves")))
 
 #Save final database
-save.image(file = "Input/proc/LAPOP_Final.RData") 
+save.image(file = "../Input/proc/LAPOP_Final.RData") 
 ```
