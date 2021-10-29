@@ -14,7 +14,7 @@ output:
 ```{r Packages, message=FALSE, warning=FALSE, include=FALSE}
 pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot, 
        data.table, influence.ME, performance, ggeffects, pals, data.table, 
-       janitor, xtable, matrixStats, scales, ggthemes)
+       janitor, xtable, matrixStats, scales, ggthemes, here)
 
 ```
 
@@ -24,7 +24,7 @@ pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot,
 
 #Load database
 rm(list = ls())
-load("Input/proc/LAPOP_Final.RData")
+load(here("Output", "LAPOP_Final.RData"))
 
 #Rename variables
 lapop = lapop %>% 
@@ -70,7 +70,7 @@ inf.m0 = influence(model_0_ven, "Country")
 #Cook D
 cooks.distance(inf.m0, parameter=1, sort=TRUE)
 
-jpeg("../Output/Graphs/CookD.jpg", width=600, height=400)
+jpeg(here("Output", "Graphs", "CookD.jpg"), width=600, height=400)
 
 plot(inf.m0, which="cook",
 cutoff=.17, sort=TRUE,
@@ -180,7 +180,7 @@ figure_6a = figure_6[[2]] +
   geom_hline(yintercept = 0, linetype = "dashed")
 
 figure_6a
-ggsave("Output/Graphs/Figure6.png", plot=figure_6a, height = 5, units="in")
+ggsave(here("Output", "Graphs", "Figure6.png"), plot=figure_6a, height = 5, units="in")
 
 ranef(model_6)
 
@@ -226,7 +226,7 @@ figure_7a = plot(int_inc_ine,
   scale_colour_grey(start=0.6, end=0.1, name="GINI [WE]", labels = c("Max decrease", "Max increase"))
 
 figure_7a
-ggsave("../Output/Graphs/Figure7a.png", plot=figure_7a, height = 4, units="in")
+ggsave(here("Output", "Graphs", "Figure7a.png"), plot=figure_7a, height = 4, units="in")
 
 #GDP [BE]
 int_inc_dev = ggpredict(model_6, terms = c("Income", "GDP_Mean [1.65, 13.98]"))
@@ -245,7 +245,7 @@ figure_7b = plot(int_inc_dev,
   scale_colour_grey(start=0.6, end=0.1, name="GDP [BE]", labels = c("Low", "High"))
 
 figure_7b
-ggsave("../Output/Graphs/Figure7b.png", plot=figure_7b, height = 4, units="in")
+ggsave(here("Output", "Graphs", "Figure7b.png"), plot=figure_7b, height = 4, units="in")
 
 ```
 
@@ -433,7 +433,7 @@ appendix3 = ggplot(redis_country_year, aes(variable, value))+
 
 appendix3
 
-ggsave("../Output/Graphs/Appendix3.png", plot=appendix3, height = 10, width = 9, units="in")
+ggsave(here("Output", "Graphs", "Appendix3.png"), plot=appendix3, height = 10, width = 9, units="in")
 ```
 
 + Appendix 4 - Hybrid multilevel regression models of individual preference for redistribution. Continuous,categorical and quadratic income measures.
@@ -514,7 +514,7 @@ extra1= ggplot(between,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra1
-ggsave("../Output/Graphs/Extra1.png", plot=extra1)
+ggsave(here("Output", "Graphs", "Extra1.png"), plot=extra1)
 
 #Inequality: Relation "within" countries
 extra2= ggplot(within, 
@@ -537,7 +537,7 @@ extra2= ggplot(within,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra2
-ggsave("../Output/Graphs/Extra2.png", plot=extra2, height = 10, width = 10, units="in")
+ggsave(here("Output", "Graphs", "Extra2.png"), plot=extra2, height = 10, width = 10, units="in")
 
 #Economic Development: Relation "between" countries
 extra3 = ggplot(between, 
@@ -559,7 +559,7 @@ extra3 = ggplot(between,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra3
-ggsave("../Output/Graphs/Extra3.png", plot=extra3)
+ggsave(here("Output", "Graphs", "Extra3.png"), plot=extra3)
 
 #Economic Development: Relation "within" countries
 extra4= ggplot(within, 
@@ -582,7 +582,7 @@ extra4= ggplot(within,
         legend.key.size=unit(1,"cm"),
         panel.background = element_rect(fill = "white"))
 extra4
-ggsave("../Output/Graphs/Extra4.png", plot=extra4, height = 10, width = 10, units="in")
+ggsave(here("Output", "Graphs", "Extra4.png"), plot=extra4, height = 10, width = 10, units="in")
 ```
 
 
