@@ -24,7 +24,7 @@ pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot,
 
 #Load database
 rm(list = ls())
-load(here("Output", "LAPOP_Final.RData"))
+load(here("Input", "Proc", "LAPOP_Final.RData"))
 
 #Rename variables
 lapop = lapop %>% 
