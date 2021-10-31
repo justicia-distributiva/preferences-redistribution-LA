@@ -133,7 +133,7 @@ redist = as.data.frame(redist) %>%
                   labels = c("1 (Disagree)", "2", "3", "4", "5", "6", "7 (Agree)")) 
 
 figure2
-ggsave(here("Output", "Graphs", "Figure2.png"), plot=figure2, height = 4, units="in")
+ggsave(here("Output", "Graphs", "Figure2.jpg"), plot=figure2, height = 4, units="in")
 
 ```
 # Preference for redistribution by country and year. Percentage by category.
@@ -159,7 +159,7 @@ figure3 = ggplot(lapop, aes(x= redistribution,  colour= year)) +
   theme_hc() + scale_color_grey(start=0.9, end=0.1, name="Wave") 
 
 figure3
-ggsave(here("Output", "Graphs", "Figure3.png"), plot=figure3, height = 10, width = 9, units="in")
+ggsave(here("Output", "Graphs", "Figure3.jpg"), plot=figure3, height = 10, width = 9, units="in")
 
 ```
 
@@ -219,7 +219,7 @@ figure4= ggplot(within,
   facet_wrap(~ wave) 
 
 figure4
-ggsave(here("Output", "Graphs", "Figure4.png"), plot=figure4, height = 5, units="in")
+ggsave(here("Output", "Graphs", "Figure4.jpg"), plot=figure4, height = 5, units="in")
 
 ```
 
@@ -250,7 +250,7 @@ figure5= ggplot(within,
   facet_wrap(~ wave) 
 
 figure5
-ggsave(here("Output", "Graphs", "Figure5.png"), plot=figure5, height = 5, units="in")
+ggsave(here("Output", "Graphs", "Figure5.jpg"), plot=figure5, height = 5, units="in")
 
 #Detach package conflicted
 detach("package:conflicted", unload = TRUE)
