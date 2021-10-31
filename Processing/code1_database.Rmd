@@ -14,8 +14,16 @@ The research code document is detailed below. The adjustment of the databases, c
 + Packages
 
 ```{r Packages, message=FALSE, warning=FALSE, include=FALSE}
+
+#Install and load packages
 #install.packages("pacman")
-pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc, here)
+pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc, here, conflicted)
+
+#Packages conflicts
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("recode", "car")
+
 ```
 
 # Individual level variables
@@ -459,10 +467,6 @@ country_vars_waves = country_vars_waves %>%
 lapop = lapop %>%
   left_join(country_vars_waves)
 
-#Only cases with Level-2 variables
-lapop = lapop %>% 
-  filter_at(vars(gini:welfare), all_vars(!is.na(.)))
-
 #Generate year_rec & country_wave_rec
 lapop = lapop %>% 
   mutate(year_rec = case_when(year == 2008 ~ "08",
@@ -477,15 +481,24 @@ lapop = lapop %>%
 lapop = lapop %>% 
   mutate(country = as.factor(country),
          year = as.factor(year))
+
+#Only cases with Level-2 variables
+lapop_all = lapop
+lapop = lapop %>% 
+  filter_at(vars(gini:welfare), all_vars(!is.na(.)))
+
 ```
 
 # Final database
 
 ```{r Save and Load Databases, echo=TRUE, message=FALSE, warning=FALSE}
 #Save Databases paper
-rm(list=setdiff(ls(), c("lapop", "country_vars_waves")))
+rm(list=setdiff(ls(), c("lapop", "lapop_all", "country_vars_waves")))
 
 #Save final database
 save.image(here("Input", "Proc", "LAPOP_Final.RData"))
+
+#Detach package conflicted
+detach("package:conflicted", unload = TRUE)
 
 ```

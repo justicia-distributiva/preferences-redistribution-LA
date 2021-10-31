@@ -15,7 +15,11 @@ output:
 
 #Install and load packages
 pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc, stargazer, stats,
-       ggthemes, data.table, reshape2, scales, xtable, ggrepel, here)
+       ggthemes, data.table, reshape2, scales, xtable, ggrepel, here, conflicted)
+
+#Packages conflicts
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
 
 ```
 
@@ -25,16 +29,6 @@ pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc, stargazer, stat
 #Load database
 rm(list = ls())
 load(here("Input", "Proc", "LAPOP_Final.RData"))
-
-#Exclude Venezuela
-lapop_ven = lapop
-country_vars_waves_ven = country_vars_waves
-
-lapop = lapop %>% 
-  filter(country!="VEN")
-
-country_vars_waves = country_vars_waves %>% 
-  filter(country!="VEN")
 
 ```
 
@@ -65,7 +59,7 @@ lapop_a = lapop_a %>%
          education = as.numeric(education_r) - 1)
 
 
-stargazer(lapop_a,title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
+stargazer(as.data.frame(lapop_a), title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
 
 prop.table(table(lapop_a$man_f))
 prop.table(table(lapop_a$married_f))
@@ -78,7 +72,7 @@ prop.table(table(lapop_a$zone))
 country_vars_waves_a= country_vars_waves %>% 
   select(-c(year, welfare))
 
-stargazer(country_vars_waves_a, title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
+stargazer(as.data.frame(country_vars_waves_a), title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
 
 #Level 3
 country_vars = country_vars_waves %>% 
@@ -243,7 +237,7 @@ figure5= ggplot(within,
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
   scale_y_continuous( "Average preference for redistribution", limits = c(4.5,6.6), 
                      breaks = c(4.5,5, 5.5, 6, 6.5)) +
-  scale_x_continuous("GDP per capita", limits = c(0,16), 
+  scale_x_continuous("GDP per capita", limits = c(0,16.1), 
                      breaks = c(0,4,8,12,16)) +
   theme(panel.grid.major = element_line(colour = "grey"),
         legend.position="bottom",
@@ -257,6 +251,9 @@ figure5= ggplot(within,
 
 figure5
 ggsave(here("Output", "Graphs", "Figure5.png"), plot=figure5, height = 5, units="in")
+
+#Detach package conflicted
+detach("package:conflicted", unload = TRUE)
 
 ```
 

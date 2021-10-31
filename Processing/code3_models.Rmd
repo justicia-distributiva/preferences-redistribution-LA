@@ -12,9 +12,17 @@ output:
 + Packages
 
 ```{r Packages, message=FALSE, warning=FALSE, include=FALSE}
+
+#Install and load packages
 pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot, 
        data.table, influence.ME, performance, ggeffects, pals, data.table, 
-       janitor, xtable, matrixStats, scales, ggthemes, here)
+       janitor, xtable, matrixStats, scales, ggthemes, here, conflicted)
+
+#Packages conflicts
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("recode", "car")
+conflict_prefer("melt", "data.table")
 
 ```
 
@@ -61,11 +69,11 @@ lapop = lapop %>%
 ```{r Null model, echo=FALSE, message=FALSE, warning=FALSE}
 
 #Null model: Country Year (with Venezuela)
-model_0_ven = lmer(Redistribution ~ 1 + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
+model_0_ven = lmer(redistribution ~ 1 + (1 | country_wave) + (1 | countryname), data=lapop_all, weights=wt)
 screenreg(model_0_ven, stars = c(0.01,0.05,0.1))
 
 #Influence tests
-inf.m0 = influence(model_0_ven, "Country")
+inf.m0 = influence(model_0_ven, "countryname")
 
 #Cook D
 cooks.distance(inf.m0, parameter=1, sort=TRUE)
@@ -78,13 +86,6 @@ xlab="Cook´s Distance",
 ylab="Country", width=60, height=40)
 
 while (!is.null(dev.list()))  dev.off()
-
-#Exclude Venezuela
-lapop = lapop %>% 
-  filter(country!="VEN")
-
-country_vars_waves = country_vars_waves %>% 
-  filter(country!="VEN")
 
 #Null model: Country Year 
 model_0 = lmer(Redistribution ~ 1 + (1 | CountryWave) + (1 |Country), data=lapop, weights=wt)
@@ -218,7 +219,7 @@ figure_7a = plot(int_inc_ine,
     x = "Income (deciles)", 
     y = "Preference for redistribution", 
     title = " ",
-    colour ="GINI [WE]"
+    colour ="GINI[WE]"
   )  +
   scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
   theme(panel.grid.minor.x = element_blank()) +
@@ -237,7 +238,7 @@ figure_7b = plot(int_inc_dev,
     x = "Income (deciles)", 
     y = "Preference for redistribution", 
     title = " ",
-    colour ="GDP [BE]"
+    colour ="GDP[BE]"
   )  +
   scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
   theme(panel.grid.minor.x = element_blank())  +
@@ -499,12 +500,15 @@ extra1= ggplot(between,
                  aes(x= GINI_Mean, y= Redistribution, label=country)) +
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
-  geom_text(aes(label=country),hjust=-0.1, vjust=-0.5, size=3.5) +
+  geom_text_repel(aes(label=country), size=3.5, show.legend = FALSE) +
   labs(x = "Inequality", y = "Preference for redistribution", fill="") +
-  scale_y_continuous("Preference for redistribution", limits = c(4.8,6.2), 
+  scale_y_continuous("Preference for redistribution", 
+                     #limits = c(4.8,6.2), 
                      breaks = c(4.8,5.2,5.6,6)) +
-  scale_x_continuous("Inequality", limits = c(40,60),
-                     breaks = c(40,50,60)) +    
+  scale_x_continuous("Inequality"
+                     #limits = c(40,60)
+                     #, breaks = c(40,50,60)
+                     ) +    
   theme(panel.grid.major = element_line(colour = "grey"),
         legend.position="none",
         axis.text=element_text(size=10),
@@ -524,8 +528,10 @@ extra2= ggplot(within,
   facet_wrap(~countryname1, ncol=3) +
   labs(x = "Inequality", y =  "Preference for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Preference for redistribution", limits = c(4.2,6.7), 
-                      breaks = c(4.5,5,5.5,6,6.5)) +
+  scale_y_continuous( "Preference for redistribution" 
+                      #, limits = c(4.2,6.7)
+                      #, breaks = c(4.5,5,5.5,6,6.5)
+                      ) +
   scale_x_continuous("Inequality",
                      breaks = c(35,40,45,50,55,60)) +  
   theme(panel.grid.major = element_line(colour = "grey"),
@@ -544,12 +550,15 @@ extra3 = ggplot(between,
                   aes(x= GDP_Mean, y= Redistribution, label=country)) +
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
-  geom_text(aes(label=country),hjust=-0.1, vjust=-0.5, size=3.5) +
+  geom_text_repel(aes(label=country), size=3.5, show.legend = FALSE) +
   labs(x = "Economic Development", y = "Preference for redistribution", fill="") +
-  scale_y_continuous("Preference for redistribution", limits = c(4.8,6.2), 
+  scale_y_continuous("Preference for redistribution", 
+                     #limits = c(4.8,6.2), 
                      breaks = c(4.8,5.2,5.6,6)) +
-  scale_x_continuous("Economic Development", limits = c(1,14),
-                     breaks = c(5,10,15)) +  
+  scale_x_continuous("Economic Development"
+                     #, limits = c(1,15)
+                     #, breaks = c(5,10,15)
+                     ) +  
   theme(panel.grid.major = element_line(colour = "grey"),
         legend.position="none",
         axis.text=element_text(size=10),
@@ -569,8 +578,9 @@ extra4= ggplot(within,
   facet_wrap(~countryname1, ncol=3) +
   labs(x = "Economic Development", y =  "Preference for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Preference for redistribution", limits = c(4.2,6.7), 
-                      breaks = c(4.5,5,5.5,6,6.5)) +
+  scale_y_continuous( "Preference for redistribution" 
+                      #, limits = c(4.2,6.7)
+                      #, breaks = c(4.5,5,5.5,6,6.5)) +
   scale_x_continuous("Economic Development",
                      breaks = c(0,5,10,15,20)) +  
   theme(panel.grid.major = element_line(colour = "grey"),
@@ -583,6 +593,10 @@ extra4= ggplot(within,
         panel.background = element_rect(fill = "white"))
 extra4
 ggsave(here("Output", "Graphs", "Extra4.png"), plot=extra4, height = 10, width = 10, units="in")
+
+#Detach package conflicted
+detach("package:conflicted", unload = TRUE)
+
 ```
 
 
