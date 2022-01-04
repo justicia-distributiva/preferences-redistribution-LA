@@ -1,5 +1,5 @@
 ---
-title: "Preferences for redistribution in unequal contexts: Changes in Latin America between 2008 and 2018"
+title: "Preferences for income redistribution in unequal contexts: Changes in Latin America between 2008 and 2018"
 subtitle: "Database processing"
 author: "Gonzalo Franetovic - Juan Carlos Castillo"
 date: "04-10-2021"

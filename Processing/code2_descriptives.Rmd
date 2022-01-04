@@ -1,5 +1,5 @@
 ---
-title: "Preferences for redistribution in unequal contexts: Changes in Latin America between 2008 and 2018"
+title: "Preferences for income redistribution in unequal contexts: Changes in Latin America between 2008 and 2018"
 subtitle: "Descriptive statistics"
 author: "Gonzalo Franetovic - Juan Carlos Castillo"
 date: "04-10-2021"
@@ -34,7 +34,7 @@ load(here("Input", "Proc", "LAPOP_Final.RData"))
 
 # Descriptive statistics 
 
-```{r Descriptive statistics, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Table 1, echo=FALSE, message=FALSE, warning=FALSE}
 #New 
 lapop = lapop %>% 
   select(country, countryname, country_wave, country_wave_rec, 
@@ -136,11 +136,12 @@ figure2
 ggsave(here("Output", "Graphs", "Figure2.jpg"), plot=figure2, height = 4, units="in")
 
 ```
+
 # Preference for redistribution by country and year. Percentage by category.
 
 ```{r Figure 3, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Figure 2: Preference for redistribution by country and year
+#Figure 3: Preference for redistribution by country and year
 figure3 = ggplot(lapop, aes(x= redistribution,  colour= year)) + 
   geom_line(aes(y = ..prop.., fill = factor(..x..)), stat="count", binwidth = 1, size = 1) +
   xlim(1, 7) +
@@ -163,11 +164,11 @@ ggsave(here("Output", "Graphs", "Figure3.jpg"), plot=figure3, height = 10, width
 
 ```
 
-+ Average preference for redistribution of income deciles, by country.
+# Average preference for redistribution of income deciles, by country.
 
-```{r Country and income, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Table 2, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Table 3: Average redistribution preference of income deciles, by country
+#Table 2: Average redistribution preference of income deciles, by country
 redis_decile = with(lapop, tapply(redistribution, list(countryname, decile_f), mean))
 redis_decile = as.data.frame(redis_decile)
 redis_decile = as.data.frame(setDT(redis_decile, keep.rownames = TRUE)[])
