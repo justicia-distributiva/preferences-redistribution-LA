@@ -38,7 +38,7 @@ load(here("Input", "Proc", "LAPOP_Final.RData"))
 lapop = lapop %>% 
   mutate(Redistribution = redistribution,
          Income = decile,
-         Man = man_f,
+         Male = male_f,
          Age = age, 
          Political = ideology_f, 
          Left = left, 
@@ -110,26 +110,26 @@ model_1 = lmer(Redistribution ~ 1 + Income
                 + (1 | Country), data=lapop, weights=wt)
 
 # Model 2. Individual predictors 
-model_2 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_2 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
 # Model 3. Individual predictors + GINI  + GDP
-model_3 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_3 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + GINI_Mean + GINI_Diff
                 + GDP_Mean + GDP_Diff + Year
                 + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
 # Model 4. Individual predictors + GINI + GDP (Income)
-model_4 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_4 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + GINI_Mean + GINI_Diff
                 + GDP_Mean + GDP_Diff + Year
                 + (1 + Income| CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
 
 #Table
-screenreg(list(model_1, model_2, model_3, model_4),  stars = c(0.01,0.05,0.1))
+screenreg(list(model_1, model_2, model_3, model_4),  stars = c(0.01,0.05,0.1), digits = 3)
 
 ```
 
@@ -138,7 +138,7 @@ screenreg(list(model_1, model_2, model_3, model_4),  stars = c(0.01,0.05,0.1))
 ```{r Cross-level interactions, echo=FALSE, message=FALSE, warning=FALSE}
 
 # Model 5: Individual predictors + GINI + GDP (Random Income) + Income*GINI
-model_5 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_5 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + GINI_Mean + GINI_Diff
                 + GDP_Mean + GDP_Diff
@@ -146,7 +146,7 @@ model_5 = lmer(Redistribution ~ 1 + Income + Man + Age + Married
                 + (1 + Income | CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
 
 # Model 6: Individual predictors + GINI + GDP (Random Income) + Income*GDP
-model_6 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_6 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + GINI_Mean + GINI_Diff
                 + GDP_Mean + GDP_Diff
@@ -154,7 +154,7 @@ model_6 = lmer(Redistribution ~ 1 + Income + Man + Age + Married
                 + (1 + Income | CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
 
 #Table
-screenreg(list(model_5, model_6),  stars = c(0.01,0.05,0.1))
+screenreg(list(model_5, model_6),  stars = c(0.01,0.05,0.1), digits = 3)
 
 ```
 
@@ -437,24 +437,24 @@ appendix3
 ggsave(here("Output", "Graphs", "Appendix3.jpg"), plot=appendix3, height = 10, width = 9, units="in")
 ```
 
-+ Appendix 4 - Hybrid multilevel regression models of individual preference for redistribution. Continuous,categorical and quadratic income measures.
++ Appendix 4 - Hybrid multilevel regression models of individual preference for redistribution. Continuous, categorical and quadratic income measures.
 
 ```{r Appendix 4, echo=FALSE, message=FALSE, warning=FALSE}
 
 #Lineal
-model_2 = lme4::lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_2 = lme4::lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
 
 #Factor
-model_2_f = lme4::lmer(Redistribution ~ 1 + Income_Decile + Man + Age + Married 
+model_2_f = lme4::lmer(Redistribution ~ 1 + Income_Decile + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
 
 #Quadratic
-model_2_q = lme4::lmer(Redistribution ~ 1 + Income + I(Income^2) + Man + Age + Married 
+model_2_q = lme4::lmer(Redistribution ~ 1 + Income + I(Income^2) + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
@@ -471,7 +471,7 @@ screenreg(list(model_2, model_2_f, model_2_q),  stars = c(0.01,0.05,0.1))
 ```{r Extra 1, echo=FALSE, message=FALSE, warning=FALSE}
 
 #Model 7: Individual predictors + GINI  + GDP + Welfare State
-model_7 = lmer(Redistribution ~ 1 + Income + Man + Age + Married 
+model_7 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
                 + Urban + GINI_Mean + GINI_Diff
                 + GDP_Mean + GDP_Diff

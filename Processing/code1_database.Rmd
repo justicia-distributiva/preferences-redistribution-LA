@@ -48,7 +48,7 @@ lapop = lapop %>%
          q12, q12c)
 
 colnames(lapop) = c("country", "year", "weight1500", "wt", "redistribution",
-                    "man", "age", "married1", "married2",
+                    "male", "age", "married1", "married2",
                     "ideology", "employment1", "employment2", "education", 
                     "income0810", "income12", "income14", "income16", "income18",
                     "zone", "sizecity",
@@ -126,8 +126,8 @@ lapop$redistribution_r = as.factor(lapop$redistribution_r)
 lapop$redistribution_ln = log(lapop$redistribution)
 
 #Man
-lapop$man = as.numeric(lapop$man <= 1)
-lapop$man_f = factor(lapop$man, levels = c(0,1), labels = c("Woman", "Man"))
+lapop$male = as.numeric(lapop$male <= 1)
+lapop$male_f = factor(lapop$male, levels = c(0,1), labels = c("Female", "Male"))
 
 #Age
 lapop$age[lapop$age<=17] = NA #Continue Variable
@@ -231,7 +231,7 @@ lapop = lapop %>%
 
 ```{r Missing values, echo=TRUE, message=FALSE, warning=FALSE}
 #Listwise with the variables used to estimate the models
-lapop = lapop[complete.cases(lapop$redistribution, lapop$man_f, lapop$age, lapop$married_f, lapop$ideology_f, lapop$employment_r, lapop$education_r, lapop$income, lapop$zone, lapop$sysconf),]
+lapop = lapop[complete.cases(lapop$redistribution, lapop$male_f, lapop$age, lapop$married_f, lapop$ideology_f, lapop$employment_r, lapop$education_r, lapop$income, lapop$zone, lapop$sysconf),]
 ```
 
 + Time dummy

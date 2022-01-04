@@ -15,7 +15,7 @@ output:
 
 #Install and load packages
 pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc, stargazer, stats,
-       ggthemes, data.table, reshape2, scales, xtable, ggrepel, here, conflicted)
+       ggthemes, data.table, reshape2, scales, xtable, ggrepel, lme4, here, conflicted)
 
 #Packages conflicts
 conflict_prefer("select", "dplyr")
@@ -39,19 +39,19 @@ load(here("Input", "Proc", "LAPOP_Final.RData"))
 lapop = lapop %>% 
   select(country, countryname, country_wave, country_wave_rec, 
          year, wave, weight1500, wt, redistribution, 
-         man_f, age, married_f, ideology_f, employment_r, education_r, 
+         male_f, age, married_f, ideology_f, employment_r, education_r, 
          decile, decile_d10, decile_f, zone, sysconf, 
          gdp, gdp_mean, gdp_dif, gini, gini_mean, gini_dif, welfare)
 
 #Level 1
 lapop_a = lapop %>% 
-  select(redistribution, decile, man_f, age, 
+  select(redistribution, decile, male_f, age, 
          married_f, ideology_f, sysconf, employment_r, 
          education_r, zone, decile_d10, decile_f) 
 
 lapop_a = lapop_a %>%
   rename(income = decile) %>% 
-  mutate(man = as.numeric(man_f) - 1,
+  mutate(male = as.numeric(male_f) - 1,
          married = as.numeric(married_f) - 1,
          ideology = as.numeric(ideology_f) - 1,
          urban = as.numeric(zone) - 1,
@@ -61,7 +61,7 @@ lapop_a = lapop_a %>%
 
 stargazer(as.data.frame(lapop_a), title="Descriptive Statistics", omit.summary.stat = c("p25", "p75"))
 
-prop.table(table(lapop_a$man_f))
+prop.table(table(lapop_a$male_f))
 prop.table(table(lapop_a$married_f))
 prop.table(table(lapop_a$employment_r))
 prop.table(table(lapop_a$ideology_f))
@@ -148,7 +148,7 @@ figure3 = ggplot(lapop, aes(x= redistribution,  colour= year)) +
   facet_wrap(~countryname, ncol=3) +
   labs(x = "Preference for redistribution", y = "", fill="") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_x_continuous(breaks = c(1:7)) +
+  scale_x_continuous(breaks = c(1:7), labels = c("1 (Disagree)", "2", "3", "4", "5", "6", "7 (Agree)")) +
   theme(
     axis.text=element_text(size=15),
         strip.text=element_text(size=15),
@@ -156,8 +156,10 @@ figure3 = ggplot(lapop, aes(x= redistribution,  colour= year)) +
         legend.title=element_text(size=15),
         legend.key.size=unit(0.5,"cm"),
         legend.position = "bottom",
-        panel.background = element_rect(fill = "white")) +
-  theme_hc() + scale_color_grey(start=0.9, end=0.1, name="Wave") 
+        panel.background = element_rect(fill = "white"),
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 10)) +
+  theme_hc() + 
+  scale_color_grey(start=0.9, end=0.1, name="Wave") 
 
 figure3
 ggsave(here("Output", "Graphs", "Figure3.jpg"), plot=figure3, height = 10, width = 9, units="in")
@@ -185,6 +187,85 @@ redis_decile
 
 print(xtable(redis_decile), include.rownames=FALSE)
 
+#Statistical differences
+countries = c("ARG",
+              "BOL",
+              "BRA",
+              "CHL",
+              "COL",
+              "CRI",
+              "DOM",
+              "ECU",
+              "GTM",
+              "HND",
+              "MEX",
+              "NIC",
+              "PAN",
+              "PER",
+              "PRY",
+              "SLV",
+              "URY")
+
+for (i in 1:length(countries)) {
+  
+  lapop_i = lapop %>% 
+      filter(country == countries[i])
+  
+  countries[i]
+  name=paste0("m_income_", countries[i])
+  pais= paste0(countries[i])
+  
+  assign(name, lme4::lmer(redistribution ~ 1 + decile_f + (1 | country_wave), data=lapop_i, weights=wt))
+
+}
+
+screenreg(list(m_income_ARG,
+             m_income_BOL,
+             m_income_BRA,
+             m_income_CHL,
+             m_income_COL,
+             m_income_CRI,
+             m_income_DOM,
+             m_income_ECU,
+             m_income_GTM),  
+          stars = c(0.05), 
+          digits = 1,
+          custom.model.name = c("ARG",
+              "BOL",
+              "BRA",
+              "CHL",
+              "COL",
+              "CRI",
+              "DOM",
+              "ECU",
+              "GTM"))
+
+screenreg(list(m_income_HND,
+             m_income_MEX,
+             m_income_NIC,
+             m_income_PAN,
+             m_income_PER,
+             m_income_PRY,
+             m_income_SLV,
+             m_income_URY),  
+          stars = c(0.05), 
+          digits = 1,
+          custom.model.name = c("HND",
+              "MEX",
+              "NIC",
+              "PAN",
+              "PER",
+              "PRY",
+              "SLV",
+              "URY"))
+
+m_income_ALL = lme4::lmer(redistribution ~ 1 + decile_f + (1 | country_wave), data=lapop, weights=wt)
+
+screenreg(m_income_ALL,  
+          stars = c(0.05), 
+          digits = 1,
+          custom.model.name = c("ALL"))
+           
 ```
 
 # Average preference for redistribution and GINI, by country and year.
