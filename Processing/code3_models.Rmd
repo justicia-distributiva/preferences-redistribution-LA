@@ -17,7 +17,7 @@ output:
 pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot, 
        data.table, influence.ME, performance, ggeffects, pals, data.table, 
        janitor, xtable, matrixStats, scales, ggthemes, here, conflicted,
-       effectsize)
+       ggrepel)
 
 #Packages conflicts
 conflict_prefer("select", "dplyr")
@@ -51,10 +51,10 @@ lapop = lapop %>%
          Income_Decile=decile_f, 
          GINI=gini,
          GDP=gdp,
-         GINI_Mean=gini_mean, 
-         GINI_Diff=gini_dif, 
-         GDP_Mean=gdp_mean, 
-         GDP_Diff=gdp_dif,
+         GINI_BE=gini_mean, 
+         GINI_WE=gini_dif, 
+         GDP_BE=gdp_mean, 
+         GDP_WE=gdp_dif,
          Welfare = welfare,
          Country = countryname,
          CountryWave = country_wave,
@@ -118,15 +118,15 @@ model_2 = lmer(Redistribution ~ 1 + Income + Male + Age + Married
 # Model 3. Individual predictors + GINI  + GDP
 model_3 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
-                + Urban + GINI_Mean + GINI_Diff
-                + GDP_Mean + GDP_Diff + Year
+                + Urban + GINI_BE + GINI_WE
+                + GDP_BE + GDP_WE + Year
                 + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
 # Model 4. Individual predictors + GINI + GDP (Income)
 model_4 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
-                + Urban + GINI_Mean + GINI_Diff
-                + GDP_Mean + GDP_Diff + Year
+                + Urban + GINI_BE + GINI_WE
+                + GDP_BE + GDP_WE + Year
                 + (1 + Income| CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
 
 #Table
@@ -141,17 +141,17 @@ screenreg(list(model_1, model_2, model_3, model_4),  stars = c(0.01,0.05,0.1), d
 # Model 5: Individual predictors + GINI + GDP (Random Income) + Income*GINI
 model_5 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
-                + Urban + GINI_Mean + GINI_Diff
-                + GDP_Mean + GDP_Diff
-                + Income*GINI_Mean + Income*GINI_Diff + Year
+                + Urban + GINI_BE + GINI_WE
+                + GDP_BE + GDP_WE
+                + Income*GINI_BE + Income*GINI_WE + Year
                 + (1 + Income | CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
 
 # Model 6: Individual predictors + GINI + GDP (Random Income) + Income*GDP
 model_6 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
-                + Urban + GINI_Mean + GINI_Diff
-                + GDP_Mean + GDP_Diff
-                + Income*GDP_Mean + Income*GDP_Diff + Year
+                + Urban + GINI_BE + GINI_WE
+                + GDP_BE + GDP_WE
+                + Income*GDP_BE + Income*GDP_WE + Year
                 + (1 + Income | CountryWave) + (1 + Income | Country), data=lapop, weights=wt)
 
 #Table
@@ -212,7 +212,7 @@ figure_6b
 ```{r Predicted values, echo=FALSE, message=FALSE, warning=FALSE}
 
 #GINI [WE]
-int_inc_ine = ggpredict(model_5, terms = c("Income", "GINI_Diff [-3.97, 4.93]"))
+int_inc_ine = ggpredict(model_5, terms = c("Income", "GINI_WE [-3.97, 4.93]"))
 
 figure_7a = plot(int_inc_ine, 
                  show.title = FALSE, ci.style = "errorbar", dot.size = 2.5) +
@@ -225,13 +225,13 @@ figure_7a = plot(int_inc_ine,
   scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
   theme(panel.grid.minor.x = element_blank()) +
   scale_y_continuous("Support for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
-  scale_colour_grey(start=0.6, end=0.1, name="GINI [WE]", labels = c("Max decrease", "Max increase"))
+  scale_colour_grey(start=0.6, end=0.1, name="GINI[WE]", labels = c("Max decrease", "Max increase"))
 
 figure_7a
-ggsave(here("Output", "Graphs", "Figure7a.jpg"), plot=figure_7a, height = 4, units="in")
+ggsave(here("Output", "Graphs", "Figure7a.jpg"), plot=figure_7a, height = 3.8, units="in")
 
 #GDP [BE]
-int_inc_dev = ggpredict(model_6, terms = c("Income", "GDP_Mean [1.65, 13.98]"))
+int_inc_dev = ggpredict(model_6, terms = c("Income", "GDP_BE [1.65, 13.98]"))
 
 figure_7b = plot(int_inc_dev, 
                  show.title = FALSE, ci.style = "errorbar", dot.size = 1.5) +
@@ -244,10 +244,10 @@ figure_7b = plot(int_inc_dev,
   scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
   theme(panel.grid.minor.x = element_blank())  +
   scale_y_continuous("Support for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
-  scale_colour_grey(start=0.6, end=0.1, name="GDP [BE]", labels = c("Low", "High"))
+  scale_colour_grey(start=0.6, end=0.1, name="GDP[BE]", labels = c("Low", "High"))
 
 figure_7b
-ggsave(here("Output", "Graphs", "Figure7b.jpg"), plot=figure_7b, height = 4, units="in")
+ggsave(here("Output", "Graphs", "Figure7b.jpg"), plot=figure_7b, height = 3.8, units="in")
 
 ```
 
@@ -474,8 +474,8 @@ screenreg(list(model_2, model_2_f, model_2_q),  stars = c(0.01,0.05,0.1), digits
 #Model 7: Individual predictors + GINI  + GDP + Welfare State
 model_7 = lmer(Redistribution ~ 1 + Income + Male + Age + Married 
                 + Political + SystemConfidence + Employment + Education 
-                + Urban + GINI_Mean + GINI_Diff
-                + GDP_Mean + GDP_Diff
+                + Urban + GINI_BE + GINI_WE
+                + GDP_BE + GDP_WE
                 + Welfare + Year
                 + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
@@ -498,7 +498,7 @@ within = lapop %>%
   summarise_all(mean, na.rm=TRUE)
 
 extra1= ggplot(between, 
-                 aes(x= GINI_Mean, y= Redistribution, label=country)) +
+                 aes(x= GINI_BE, y= Redistribution, label=country)) +
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
   geom_text_repel(aes(label=country), size=3.5, show.legend = FALSE) +
@@ -548,7 +548,7 @@ ggsave(here("Output", "Graphs", "Extra2.jpg"), plot=extra2, height = 10, width =
 
 #Economic Development: Relation "between" countries
 extra3 = ggplot(between, 
-                  aes(x= GDP_Mean, y= Redistribution, label=country)) +
+                  aes(x= GDP_BE, y= Redistribution, label=country)) +
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
   geom_text_repel(aes(label=country), size=3.5, show.legend = FALSE) +
