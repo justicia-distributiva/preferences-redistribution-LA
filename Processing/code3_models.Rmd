@@ -163,7 +163,7 @@ screenreg(list(model_5, model_6),  stars = c(0.01,0.05,0.1), digits = 3)
 
 ```{r Random effect of income, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Figure 6: Income random effect on preference for redistribution by country: intercept and slope
+#Figure 6: Income random effect on support for redistribution by country: intercept and slope
 figure_6 = plot_model(model_4, type = "re", 
                    show.legend = FALSE,
                    show.values = TRUE,
@@ -194,7 +194,7 @@ figure_6b = plot(me,
                  show.title = FALSE) +
   labs(
     x = "Income (deciles)", 
-    y = "Preference for redistribution", 
+    y = "Support for redistribution", 
     title = " "
   )  +
   scale_x_continuous("Income (deciles)", limits = c(1,10), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
@@ -218,13 +218,13 @@ figure_7a = plot(int_inc_ine,
                  show.title = FALSE, ci.style = "errorbar", dot.size = 2.5) +
   labs(
     x = "Income (deciles)", 
-    y = "Preference for redistribution", 
+    y = "Support for redistribution", 
     title = " ",
     colour ="GINI[WE]"
   )  +
   scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
   theme(panel.grid.minor.x = element_blank()) +
-  scale_y_continuous("Preference for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
+  scale_y_continuous("Support for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
   scale_colour_grey(start=0.6, end=0.1, name="GINI [WE]", labels = c("Max decrease", "Max increase"))
 
 figure_7a
@@ -237,13 +237,13 @@ figure_7b = plot(int_inc_dev,
                  show.title = FALSE, ci.style = "errorbar", dot.size = 1.5) +
   labs(
     x = "Income (deciles)", 
-    y = "Preference for redistribution", 
+    y = "Support for redistribution", 
     title = " ",
     colour ="GDP[BE]"
   )  +
   scale_x_continuous("Income (deciles)", limits = c(0.9,10.1), breaks = c(1,2,3,4,5,6,7,8,9,10)) +
   theme(panel.grid.minor.x = element_blank())  +
-  scale_y_continuous("Preference for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
+  scale_y_continuous("Support for redistribution", limits = c(5, 6.5), breaks = c(5, 5.5, 6, 6.5)) +
   scale_colour_grey(start=0.6, end=0.1, name="GDP [BE]", labels = c("Low", "High"))
 
 figure_7b
@@ -283,7 +283,7 @@ xtable(sample1, digits = 0)
 
 #Table: Within- and between-country distribution of dependent and independent variables
 
-##Preference for redistribution
+##Support for redistribution
 
 #Country names
 lapop$countryname1 = as.factor(lapop$countryname)
@@ -407,11 +407,11 @@ print(xtable(annex2), include.rownames=FALSE, display = c("s","fg","d","d","d","
 
 ```
 
-+ Appendix 3 - Average preference for redistribution, by country and year
++ Appendix 3 - Average support for redistribution, by country and year
 
 ```{r Appendix 3, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Preference for redistribution by country and year
+#Support for redistribution by country and year
 
 redis_country_year = with(lapop, tapply(redistribution, list(countryname, year), mean))
 redis_country_year = as.data.frame(redis_country_year)
@@ -420,7 +420,7 @@ redis_country_year = melt(redis_country_year, id=c("rn"))
 
 appendix3 = ggplot(redis_country_year, aes(variable, value))+
   geom_bar(stat = "identity", fill = "#333333") +
-    labs(x = "Year", y =  "Preference for redistribution") + 
+    labs(x = "Year", y =  "Support for redistribution") + 
   facet_wrap(~ rn, ncol = 3)  +
   scale_y_continuous(limits=c(1,7), breaks = c(1,2,3,4,5,6,7), oob = rescale_none) + 
   theme(
@@ -438,7 +438,7 @@ appendix3
 ggsave(here("Output", "Graphs", "Appendix3.jpg"), plot=appendix3, height = 10, width = 9, units="in")
 ```
 
-+ Appendix 4 - Hybrid multilevel regression models of individual preference for redistribution. Continuous, categorical and quadratic income measures.
++ Appendix 4 - Hybrid multilevel regression models of individual support for redistribution. Continuous, categorical and quadratic income measures.
 
 ```{r Appendix 4, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -502,8 +502,8 @@ extra1= ggplot(between,
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
   geom_text_repel(aes(label=country), size=3.5, show.legend = FALSE) +
-  labs(x = "Inequality", y = "Preference for redistribution", fill="") +
-  scale_y_continuous("Preference for redistribution", 
+  labs(x = "Inequality", y = "Support for redistribution", fill="") +
+  scale_y_continuous("Support for redistribution", 
                      #limits = c(4.8,6.2), 
                      breaks = c(4.8,5.2,5.6,6)) +
   scale_x_continuous("Inequality"
@@ -527,9 +527,9 @@ extra2= ggplot(within,
   geom_point(size = 2, alpha = .8) + 
   stat_smooth(size = 1, method = "lm", se = FALSE, colour="black") +
   facet_wrap(~countryname1, ncol=3) +
-  labs(x = "Inequality", y =  "Preference for redistribution") + 
+  labs(x = "Inequality", y =  "Support for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Preference for redistribution" 
+  scale_y_continuous( "Support for redistribution" 
                       #, limits = c(4.2,6.7)
                       #, breaks = c(4.5,5,5.5,6,6.5)
                       ) +
@@ -552,8 +552,8 @@ extra3 = ggplot(between,
   geom_point() + 
   geom_smooth(method = "lm", colour="black") +
   geom_text_repel(aes(label=country), size=3.5, show.legend = FALSE) +
-  labs(x = "Economic Development", y = "Preference for redistribution", fill="") +
-  scale_y_continuous("Preference for redistribution", 
+  labs(x = "Economic Development", y = "Support for redistribution", fill="") +
+  scale_y_continuous("Support for redistribution", 
                      #limits = c(4.8,6.2), 
                      breaks = c(4.8,5.2,5.6,6)) +
   scale_x_continuous("Economic Development"
@@ -577,9 +577,9 @@ extra4= ggplot(within,
   geom_point(size = 2, alpha = .8) + 
   stat_smooth(size = 1, method = "lm", se = FALSE, colour="black") +
   facet_wrap(~countryname1, ncol=3) +
-  labs(x = "Economic Development", y =  "Preference for redistribution") + 
+  labs(x = "Economic Development", y =  "Support for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Preference for redistribution" 
+  scale_y_continuous( "Support for redistribution" 
                       #, limits = c(4.2,6.7)
                       #, breaks = c(4.5,5,5.5,6,6.5)
                       ) +

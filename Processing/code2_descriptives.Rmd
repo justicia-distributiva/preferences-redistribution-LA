@@ -84,11 +84,11 @@ prop.table(table(country_vars$welfare))
 
 ```
 
-# Preference for redistribution by countries. Percentage by category.
+# Support for redistribution by countries. Percentage by category.
 
 ```{r Figure 2, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Figure 2: Preference for redistribution by countries. Percentage by category.
+#Figure 2: Support for redistribution by countries. Percentage by category.
 redist = xtabs(~countryname+redistribution, data = lapop)
 redist = prop.table(redist, 1)*100
 redist = as.data.frame(redist) %>% 
@@ -138,16 +138,16 @@ ggsave(here("Output", "Graphs", "Figure2.jpg"), plot=figure2, height = 4, units=
 
 ```
 
-# Preference for redistribution by country and year. Percentage by category.
+# Support for redistribution by country and year. Percentage by category.
 
 ```{r Figure 3, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Figure 3: Preference for redistribution by country and year
+#Figure 3: Support for redistribution by country and year
 figure3 = ggplot(lapop, aes(x= redistribution,  colour= year)) + 
   geom_line(aes(y = ..prop.., fill = factor(..x..)), stat="count", binwidth = 1, size = 1) +
   xlim(1, 7) +
   facet_wrap(~countryname, ncol=3) +
-  labs(x = "Preference for redistribution", y = "", fill="") +
+  labs(x = "Support for redistribution", y = "", fill="") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(breaks = c(1:7), labels = c("1 (Disagree)", "2", "3", "4", "5", "6", "7 (Agree)")) +
   theme(
@@ -167,11 +167,11 @@ ggsave(here("Output", "Graphs", "Figure3.jpg"), plot=figure3, height = 10, width
 
 ```
 
-# Average preference for redistribution of income deciles, by country.
+# Average support for redistribution of income deciles, by country.
 
 ```{r Table 2, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Table 2: Average redistribution preference of income deciles, by country
+#Table 2: Average support for redistribution of income deciles, by country
 redis_decile = with(lapop, tapply(redistribution, list(countryname, decile_f), mean))
 redis_decile = as.data.frame(redis_decile)
 redis_decile = as.data.frame(setDT(redis_decile, keep.rownames = TRUE)[])
@@ -269,7 +269,7 @@ screenreg(m_income_ALL,
            
 ```
 
-# Average preference for redistribution and GINI, by country and year.
+# Average support for redistribution and GINI, by country and year.
 
 ```{r Figure 4, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -279,15 +279,15 @@ within = lapop %>%
   group_by(country, wave) %>% 
   summarise_all(mean, na.rm=TRUE)
 
-#Figure 4: Average redistribution preference and inequality, by country and year
+#Figure 4: Average support for redistribution and inequality, by country and year
 figure4= ggplot(within, 
             aes(x= gini, y= redistribution, label=country)) +
   geom_point(size = 1.5, alpha = 0.8) + 
   stat_smooth(size = 1, method = "lm", se = FALSE, fullrange = TRUE, colour = "black") +   
   geom_text_repel(aes(label=country), size=2.5, show.legend = FALSE) +
-  labs(x = "Inequality", y =  "Preference for redistribution") + 
+  labs(x = "Inequality", y =  "Support for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Average preference for redistribution", limits = c(4.5,6.6), 
+  scale_y_continuous( "Average support for redistribution", limits = c(4.5,6.6), 
                      breaks = c(4.5,5, 5.5, 6, 6.5)) +
   scale_x_continuous("GINI", limits = c(39,60), 
                      breaks = c(40,45,50,55,60)) +
@@ -306,19 +306,19 @@ ggsave(here("Output", "Graphs", "Figure4.jpg"), plot=figure4, height = 5, units=
 
 ```
 
-# Average preference for redistribution and GDP per capita, by country and year.
+# Average support for redistribution and GDP per capita, by country and year.
 
 ```{r Figure 5, echo=FALSE, message=FALSE, warning=FALSE}
 
-#Figure 5: Average redistribution preference and economic development, by country and year (facet)
+#Figure 5: Average support for redistribution and economic development, by country and year (facet)
 figure5= ggplot(within, 
             aes(x= gdp, y= redistribution, label=country)) +
   geom_point(size = 1.5, alpha = 0.8) + 
   stat_smooth(size = 1, method = "lm", se = FALSE, fullrange = TRUE, colour = "black") +   
   geom_text_repel(aes(label=country), size=2.5, show.legend = FALSE) +
-  labs(x = "Inequality", y =  "Preference for redistribution") + 
+  labs(x = "Inequality", y =  "Support for redistribution") + 
   scale_color_grey(start=0.8, end=0.2, name="Wave") +  
-  scale_y_continuous( "Average preference for redistribution", limits = c(4.5,6.6), 
+  scale_y_continuous( "Average support for redistribution", limits = c(4.5,6.6), 
                      breaks = c(4.5,5, 5.5, 6, 6.5)) +
   scale_x_continuous("GDP per capita", limits = c(0,16.1), 
                      breaks = c(0,4,8,12,16)) +

@@ -118,7 +118,7 @@ lapop$wave = as.factor(lapop$wave)
 #Country_year
 lapop$country_wave = do.call(paste, c(lapop[c("country", "wave")], sep = "_"))
 
-#Preference for redistribution
+#Support for redistribution
 #Dummy
 lapop$redistribution_r = as.numeric(lapop$redistribution >= 7)
 lapop$redistribution_r = as.factor(lapop$redistribution_r)
