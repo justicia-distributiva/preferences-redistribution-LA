@@ -15,7 +15,8 @@ output:
 
 #Install and load packages
 pacman::p_load(tidyverse, countrycode, car, zoo, wbstats, Hmisc, stargazer, stats,
-       ggthemes, data.table, reshape2, scales, xtable, ggrepel, lme4, here, conflicted)
+       ggthemes, data.table, reshape2, scales, xtable, ggrepel, lme4, here, conflicted,
+       texreg)
 
 #Packages conflicts
 conflict_prefer("select", "dplyr")

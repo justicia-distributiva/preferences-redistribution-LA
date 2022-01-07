@@ -16,7 +16,8 @@ output:
 #Install and load packages
 pacman::p_load(tidyverse, lme4, stats, texreg, car, interplot, sjPlot, 
        data.table, influence.ME, performance, ggeffects, pals, data.table, 
-       janitor, xtable, matrixStats, scales, ggthemes, here, conflicted)
+       janitor, xtable, matrixStats, scales, ggthemes, here, conflicted,
+       effectsize)
 
 #Packages conflicts
 conflict_prefer("select", "dplyr")
@@ -459,7 +460,7 @@ model_2_q = lme4::lmer(Redistribution ~ 1 + Income + I(Income^2) + Male + Age + 
                 + Urban + Year + (1 | CountryWave) + (1 | Country), data=lapop, weights=wt)
 
 #Table
-screenreg(list(model_2, model_2_f, model_2_q),  stars = c(0.01,0.05,0.1))
+screenreg(list(model_2, model_2_f, model_2_q),  stars = c(0.01,0.05,0.1), digits = 3)
 
 ```
 
