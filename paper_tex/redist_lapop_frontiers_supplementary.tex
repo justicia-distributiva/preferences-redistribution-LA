@@ -7,7 +7,7 @@
 %%% In http://www.ctan.org/ you can find the packages and how to install them, if necessary. %%%
 %%%  NB logo1.jpg is required in the path in order to correctly compile front page header %%%
 
-\documentclass[utf8]{frontiers_suppmat} % for all articles
+\documentclass[utf8]{frontiers_suppmat1} % for all articles
 \usepackage{url,hyperref,lineno,microtype}
 \usepackage[onehalfspacing]{setspace}
 \usepackage[outdir=./]{epstopdf}
@@ -58,8 +58,9 @@
 		Paraguay & 988 & 1073 & 1274 & 1082 & 1049 & 1294 & 6760 \\
 		Peru & 1337 & 1343 & 1291 & 1138 & 2299 & 1320 & 8728 \\
 		Uruguay & 1328 & 1370 & 1314 & 1378 & 1353 & 1437 & 8180 \\
+		\midrule
 		Total & 22356 & 25459 & 22424 & 22018 & 19996 & 19534 & 131787 \\
-		\bottomrule
+		\botrule
 	\end{tabular}
 \end{table}
 
@@ -94,8 +95,13 @@
   Paraguay & 5.71 & 1.70 & 0.57 & 49.40 & 1.43 & 5.13 & 0.50 \\ 
   Peru & 5.42 & 1.56 & 0.27 & 44.57 & 1.54 & 5.80 & 0.63 \\ 
   Uruguay & 5.82 & 1.60 & 0.34 & 41.47 & 2.37 & 14.58 & 1.45 \\ 
+  \midrule
   Total & 5.63 & 1.63 &  & 47.71 & 4.17 & 7.65 & 4.12 \\ 
-		\bottomrule
+		\botrule
+	\multicolumn{8}{l}{\tiny{Note: SD total indicates the standard deviation of the dependent variable across countries. This is the overall}} \\
+	\multicolumn{8}{l}{\tiny{variation observed at the individual level. SD years gives the standard deviation of country-year means, or}} \\
+	\multicolumn{8}{l}{\tiny{the standard deviation of a data set aggregated at a country-years level, representing the difference in the}} \\
+	\multicolumn{8}{l}{\tiny{average between survey years.}}
 	\end{tabular}
 \end{table}
 
@@ -121,7 +127,7 @@
 \renewcommand{\arraystretch}{0.8}
 \begin{tabular}{l D{.}{.}{7.5} D{.}{.}{7.5} D{.}{.}{7.5}}
 \toprule
- & \multicolumn{1}{c}{Model 1} & \multicolumn{1}{c}{Model 2} & \multicolumn{1}{c}{Model 3}\\
+ & \multicolumn{1}{c}{Model 7} & \multicolumn{1}{c}{Model 8} & \multicolumn{1}{c}{Model 9}\\
 \midrule
 Income                       & 0.00^{*}    &             & 0.03^{***}  \\
                              & (0.00)      &             & (0.01)      \\
@@ -145,13 +151,12 @@ Income\_Decile9              &             & 0.10^{***}  &             \\
                              &             & (0.02)      &             \\
 Income\_Decile10             &             & 0.02        &             \\
                              &             & (0.02)      &             \\
-\hline
 Constant                     & 5.40^{***}  & 5.36^{***}  & 5.35^{***}  \\
                              & (0.08)      & (0.08)      & (0.09)      \\
-\hline
+\midrule
 Individual-level controls    &     Yes     &     Yes     &     Yes     \\
 Year fixed effects           &     Yes     &     Yes     &     Yes     \\
-\hline
+\midrule
 AIC                          & 501403.54   &  501438.84  & 501408.03   \\
 BIC                          & 501618.89   &  501732.51  & 501633.17   \\
 Log Likelihood               & -250679.77  & -250689.42  & -250681.01  \\
@@ -161,7 +166,7 @@ N Level 3                    & 17          & 17          & 17          \\
 Var: Level 2 (Int)           & 0.05        & 0.05        & 0.05        \\
 Var: Level 3 (Int)           & 0.05        & 0.05        & 0.05        \\
 Var: Residual                & 2.49        & 2.49        & 2.49        \\
-\bottomrule
+		\botrule
 \multicolumn{4}{l}{\scriptsize{$^{***}p<0.01$, $^{**}p<0.05$, $^*p<0.1$}}
 \end{tabular}
 \end{table}
