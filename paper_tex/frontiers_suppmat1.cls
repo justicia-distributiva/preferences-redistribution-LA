@@ -560,9 +560,9 @@
 
 \long\def\@tablecaption#1#2{%
   \begingroup
-  \footnotesize
-  \textbf{#1.}\enskip{#2\par}
-  \endgroup}
+  \normalsize
+  \textbf{#1.}\enskip{#2\strut\par}
+  \endgroup\vspace{\belowcaptionskip}}
 
 
 % Table rules
