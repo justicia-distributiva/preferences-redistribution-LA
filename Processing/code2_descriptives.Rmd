@@ -92,7 +92,7 @@ prop.table(table(country_vars$welfare))
 redist = xtabs(~countryname+redistribution, data = lapop)
 redist = prop.table(redist, 1)*100
 redist = as.data.frame(redist) %>% 
-  arrange(desc(redistribution, Freq)) %>% 
+  arrange(desc(redistribution), desc(Freq)) %>% 
   mutate(countryname1 = case_when(countryname=="Bolivia" ~ 1,
                                   countryname=="Peru" ~ 2,
                                   countryname=="Guatemala" ~ 3,
